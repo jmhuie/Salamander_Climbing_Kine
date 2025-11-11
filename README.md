@@ -6,7 +6,7 @@ This repository contains the data and scripts for "Limb kinematics and morpholog
 ### Content
 - .../CameraCalibs/
     - /MayaCams/
-		- A directory containing the camera calibrations from each filming session. Files were extracted from XMALab files in MayaCam format with the **extract_mayacam** function in xma2dlc Python script.
+		- A directory containing the camera calibrations from each filming session. Files were extracted from XMALab files in MayaCam format with the <code>extract_mayacam</code> function in xma2dlc Python script.
 	- /CalibPlanes.csv
 		- A .csv file containing coordinates to define a horizontal plane for each filming session.
 
@@ -14,9 +14,9 @@ This repository contains the data and scripts for "Limb kinematics and morpholog
 	- /2Dpoints/
 		- A directory of 2D coordinate files predicted by the DLC model for each trial.
 	- /3Dpoints/
-		- A directory of 3D coordinate files converted from 2D with the **convert_2d_to_3d** function in xma2dlc Python script.
+		- A directory of 3D coordinate files converted from 2D with the <code>convert_2d_to_3d</code> function in xma2dlc Python script.
 		
-- .../Python/
+- .../Python Code/
 	- /xma2dlc.py
 		- A Python script files containing functions for creating a DLC network with training data from XMALab, analyzing new videos, extracting camera calibrations,
 		converting 2D coordinates to 3D, and more. Some functions were modified from the [XROMM Tools](https://github.com/jdlaurence/XROMM_DLCTools) as part of [Laurence-Chasen et al. 2020](https://doi.org/10.1242/jeb.226720).
@@ -32,17 +32,17 @@ This repository contains the data and scripts for "Limb kinematics and morpholog
 		and ipsilateral forelimb strides.	
 	- /ClimbKineData.csv
 		- A .csv file containing the calculated limb lengths and raw spatiotemporal gait parameters calculated in R. Variables include speed (cm/s), stride lengths (cm), limb lengths (cm), duty factor,
-		stride duration (s), and stride frequencies (stride/s). Saved from **ClimbKine_Mainscript_Pub.R**.
+		stride duration (s), and stride frequencies (stride/s). Saved from <code>ClimbKine_Mainscript_Pub.R</code>.
 	- /ClimbKineFootSize.csv
 		- A .csv file containing the manus and pes size (cm^2) of each specimen.
 	- /Code.Rproj
 		- A R project file. Should be used to launch R studio.
 	- /fore3Dpts_all.rds
-		- A R .rds file containing the 3D coordinates for all forelimb strides after interpolating to 101 frames. Saved from **ClimbKine_Mainscript_Pub.R** to save time re-running code.
+		- A R .rds file containing the 3D coordinates for all forelimb strides after interpolating to 101 frames. Saved from <code>ClimbKine_Mainscript_Pub.R</code> to save time re-running code.
 	- /foreAngles_all.rds
-		- A R .rds file containing the angular and linear kinematic variables calculated for all forelimb strides. Saved from **ClimbKine_Mainscript_Pub.R** to save time re-running code.
+		- A R .rds file containing the angular and linear kinematic variables calculated for all forelimb strides. Saved from <code>ClimbKine_Mainscript_Pub.R</code> to save time re-running code.
 	- /hind3Dpts_all.rds
-		- A R .rds file containing the 3D coordinates for all hindlimb strides after interpolating to 101 frames. Saved from **ClimbKine_Mainscript_Pub.R** to save time re-running code.
+		- A R .rds file containing the 3D coordinates for all hindlimb strides after interpolating to 101 frames. Saved from <code>ClimbKine_Mainscript_Pub.R</code> to save time re-running code.
 	- /hindAngles_all.rds
-		- A R .rds file containing the angular and linear kinematic variables calculated for all hindlimb strides. Saved from **ClimbKine_Mainscript_Pub.R** to save time re-running code.
+		- A R .rds file containing the angular and linear kinematic variables calculated for all hindlimb strides. Saved from <code>ClimbKine_Mainscript_Pub.R</code> to save time re-running code.
 
