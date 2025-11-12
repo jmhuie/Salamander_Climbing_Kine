@@ -18,7 +18,7 @@ This repository contains the data and scripts for "Limb kinematics and morpholog
 		
 - .../Python Code/
 	- /xma2dlc.py
-		- A Python script files containing functions for creating a DLC network with training data from XMALab, analyzing new videos, extracting camera calibrations,
+		- A Python script file containing functions for creating a DLC network with training data from XMALab, analyzing new videos, extracting camera calibrations,
 		converting 2D coordinates to 3D, and more. Some functions were modified from the [XROMM Tools](https://github.com/jdlaurence/XROMM_DLCTools) as part of [Laurence-Chasen et al. 2020](https://doi.org/10.1242/jeb.226720).
 		
 - .../R Code/
