@@ -1,3 +1,6 @@
+# R script for "Limb kinematics and morphology improve salamander climbing performance"
+# Code written by Jonathan M. Huie
+
 rm(list = ls())
 source("All_Functions.R") # all additional functions
 library(kraken)
@@ -14,141 +17,146 @@ shape.sp <- setNames(c(21,22,23,24), c("Aneides aeneus","Aneides hardii","Aneide
 fill.sp <- setNames(c(c("darkgrey","#8c510a","white","purple")), c("Aneides aeneus","Aneides hardii","Aneides lugubris","Plethodon glutinosus"))
 
 # Run Once -----------------------------------------------------------------
+# do not need to run if the whole 'R Code' folder was downloaded from GitHub
+# jump ahead to where it says 'Start Here'
 
 ## Load Raw 3D pts ----------------------------------------------------
-# read in 3D pts and create lists
-combined_fore <- list()
-combined_hind <- list()
 
-threeD_path <- "../Landmarks/3Dpoints"
+# unhash the following code to run
 
-files <- list.files(path =threeD_path, full.names = TRUE)
-KineMeta <- read.csv("ClimbKineMeta.csv") 
-KineData <- KineMeta[,1:11]
-for (i in 1:length(files)) {
-  name <- list.files(path =threeD_path, full.names = FALSE)[i]
-  name <- gsub(".csv","",name)
-  land <- read.csv(files[i], na.strings = "NaN")
-  if (any(colnames(land) == "Frame")) {
-    land <- land[,-1]
-  }
-  
-  # prep forelimb points; trim to just the stride
-  fore <- land[,c(1:21,43:45)]
-  fore <- fore[,c(grep("Pec_A",colnames(fore)),grep("Pec_P",colnames(fore)),grep("Shoulder",colnames(fore)),
-                  grep("Elbow",colnames(fore)),grep("Wrist",colnames(fore)),
-                  grep("Metacarpal",colnames(fore)),grep("Finger",colnames(fore)),grep("Snout",colnames(fore)))]
-  fore <- na.omit(fore)
-  fore[,c(grep("X",colnames(fore),grep("Y",colnames(fore))))] <- -1*fore[,c(grep("X",colnames(fore),grep("Y",colnames(fore))))]
-  start <- KineMeta[which(KineMeta$Trial == name),"Fore_Stance_Start"]
-  end <- KineMeta[which(KineMeta$Trial == name),"Fore_Swing_End"]
-  fore <- fore[which.min(abs(as.numeric(rownames(fore)) - start)):which.min(abs(as.numeric(rownames(fore)) - end)),]
-  
-  # prep hindlimb points; trim to just the stride
-  hind <- land[,c(22:42,43:45)]
-  hind <- hind[,c(grep("Pel_A",colnames(hind)),grep("Pel_P",colnames(hind)),grep("Hip",colnames(hind)),
-                  grep("Knee",colnames(hind)),grep("Ankle",colnames(hind)),
-                  grep("Metatarsal",colnames(hind)),grep("Toe",colnames(hind)),grep("Snout",colnames(hind)))]
-  hind <- na.omit(hind)
-  hind[,c(grep("X",colnames(hind),grep("Y",colnames(hind))))] <- -1*hind[,c(grep("X",colnames(hind),grep("Y",colnames(hind))))]
-  start <- KineMeta[which(KineMeta$Trial == name),"Hind_Stance_Start"]
-  end <- KineMeta[which(KineMeta$Trial == name),"Hind_Swing_End"]
-  hind <- hind[which.min(abs(as.numeric(rownames(hind)) - start)):which.min(abs(as.numeric(rownames(hind)) - end)),]
-  
-  # prep snout landmark
-  snout <- land[,c(43:45)]
-  snout <- na.omit(snout)
-  snout[,c(grep("X",colnames(snout),grep("Y",colnames(snout))))] <- -1*snout[,c(grep("X",colnames(snout),grep("Y",colnames(snout))))]
-  start <- KineMeta[which(KineMeta$Trial == name),"Hind_Stance_Start"]
-  end <- KineMeta[which(KineMeta$Trial == name),"Fore_Swing_End"]
-  snout <- snout[which.min(abs(as.numeric(rownames(snout)) - start)):which.min(abs(as.numeric(rownames(snout)) - end)),]
-  
-  # calc body speed
-  fps <- KineMeta[which(KineMeta$Trial == name),"Frame_Rate"]/KineMeta[which(KineMeta$Trial == name),"Decimation"]
-  KineData[which(KineData$Trial == name),"Speed"] <- speedKine(snout,fps)$speed
-  # calc stride length
-  KineData[which(KineData$Trial == name),"Hind_Stride_Length"] <- speedKine(hind[,13:15],fps)$dist
-  KineData[which(KineData$Trial == name),"Fore_Stride_Length"] <- speedKine(fore[,13:15],fps)$dist
-  # calc limb length
-  KineData[which(KineData$Trial == name),"Arm_Length"] <- limb_length(fore[,7:9],fore[,10:12],fore[,13:15])
-  KineData[which(KineData$Trial == name),"Leg_Length"] <- limb_length(hind[,7:9],hind[,10:12],hind[,13:15])
-  
-  if (all(is.na(fore)) != TRUE) {
-    combined_fore[[length(combined_fore) + 1]] <- fore
-  }
-  if (all(is.na(hind)) != TRUE) {
-    combined_hind[[length(combined_hind) + 1]] <- hind
-  }
-  
-  remove(land)
-  remove(fore)
-  remove(hind)
-  remove(snout)
-}
-
-for(i in unique(KineData$ID)) {
-  KineData[grep(i,KineData$ID),"Arm_Length"] <- tapply(KineData$Arm_Length,KineData$ID,median)[i]
-  KineData[grep(i,KineData$ID),"Leg_Length"] <- tapply(KineData$Leg_Length,KineData$ID,median)[i]
-}
-
-# some spatiotemporal calc
-KineData$Fore_Duty_Factor <- (KineMeta$Fore_Stance_End+1 - KineMeta$Fore_Stance_Start)/(KineMeta$Fore_Swing_End - KineMeta$Fore_Stance_Start)
-KineData$Hind_Duty_Factor <- (KineMeta$Hind_Stance_End+1 - KineMeta$Hind_Stance_Start)/(KineMeta$Hind_Swing_End - KineMeta$Hind_Stance_Start)
-KineData$Fore_Stride_Dur <- (KineMeta$Fore_Swing_End - KineMeta$Fore_Stance_Start)/(KineMeta$Frame_Rate/KineMeta$Decimation)
-KineData$Hind_Stride_Dur <- (KineMeta$Hind_Swing_End - KineMeta$Hind_Stance_Start)/(KineMeta$Frame_Rate/KineMeta$Decimation)
-KineData$Fore_Stride_Freq <- 1/KineData$Fore_Stride_Dur
-KineData$Hind_Stride_Freq <- 1/KineData$Hind_Stride_Dur
-
-# save the kine data so far
-write.csv(KineData,"ClimbKineData.csv",row.names = F,quote = F)
-
-names(combined_fore) <- gsub(".csv","",basename(files))
-names(combined_hind) <- gsub(".csv","",basename(files))
-
-#interpolate to 101 frames so each column = 1% of stance
-combined_fore <- lapply(combined_fore, FUN = function(x) interpolateR(x, 101))
-combined_hind <- lapply(combined_hind, FUN = function(x) interpolateR(x, 101))
-
-# save lists as RDS so that you don't have to run this whole chunk again
-saveRDS(combined_fore, "fore3Dpts_all.rds")
-saveRDS(combined_hind, "hind3Dpts_all.rds")
-
-## Calculate Angles --------------------------------------------------------
-
-# calculate the 3D joint angles
-KineMeta <- read.csv("ClimbKineMeta.csv") 
-combined_fore <- readRDS("fore3Dpts_all.rds")
-combined_hind <- readRDS("hind3Dpts_all.rds")
-All_fore <- list()
-All_hind <- list()
-CalibPlanes <- read.csv("../CameraCalibs/CalibPlanes.csv") 
-rownames(CalibPlanes) <- CalibPlanes$Calibration
-
-# forelimbs
-for (i in names(combined_fore)){
-  calib <- KineMeta$Calibration[which(KineMeta$Trial == i)]
-  All_fore[i] <- lapply(combined_fore[i], anglecalc,
-                        planeP1 = as.numeric(CalibPlanes[calib,2:4]),
-                        planeP2 = as.numeric(CalibPlanes[calib,5:7]),
-                        planeP3 = as.numeric(CalibPlanes[calib,8:10]))
-}
-
-# hindlimbs
-for (i in names(combined_hind)){
-  calib <- KineMeta$Calibration[which(KineMeta$Trial == i)]
-  All_hind[i] <- lapply(combined_hind[i], anglecalc,
-                        planeP1 = as.numeric(CalibPlanes[calib,2:4]),
-                        planeP2 = as.numeric(CalibPlanes[calib,5:7]),
-                        planeP3 = as.numeric(CalibPlanes[calib,8:10]))
-}
-
-#check that there were no errors or NAs
-which(sapply(All_fore, anyNA))
-which(sapply(All_hind, anyNA))
-
-#save RDS
-saveRDS(All_fore, "foreAngles_all.rds")
-saveRDS(All_hind, "hindAngles_all.rds")
+# # read in 3D pts and create lists
+# combined_fore <- list()
+# combined_hind <- list()
+# 
+# threeD_path <- "../Landmarks/3Dpoints"
+# 
+# files <- list.files(path =threeD_path, full.names = TRUE)
+# KineMeta <- read.csv("ClimbKineMeta.csv") 
+# KineData <- KineMeta[,1:11]
+# for (i in 1:length(files)) {
+#   name <- list.files(path =threeD_path, full.names = FALSE)[i]
+#   name <- gsub(".csv","",name)
+#   land <- read.csv(files[i], na.strings = "NaN")
+#   if (any(colnames(land) == "Frame")) {
+#     land <- land[,-1]
+#   }
+#   
+#   # prep forelimb points; trim to just the stride
+#   fore <- land[,c(1:21,43:45)]
+#   fore <- fore[,c(grep("Pec_A",colnames(fore)),grep("Pec_P",colnames(fore)),grep("Shoulder",colnames(fore)),
+#                   grep("Elbow",colnames(fore)),grep("Wrist",colnames(fore)),
+#                   grep("Metacarpal",colnames(fore)),grep("Finger",colnames(fore)),grep("Snout",colnames(fore)))]
+#   fore <- na.omit(fore)
+#   fore[,c(grep("X",colnames(fore),grep("Y",colnames(fore))))] <- -1*fore[,c(grep("X",colnames(fore),grep("Y",colnames(fore))))]
+#   start <- KineMeta[which(KineMeta$Trial == name),"Fore_Stance_Start"]
+#   end <- KineMeta[which(KineMeta$Trial == name),"Fore_Swing_End"]
+#   fore <- fore[which.min(abs(as.numeric(rownames(fore)) - start)):which.min(abs(as.numeric(rownames(fore)) - end)),]
+#   
+#   # prep hindlimb points; trim to just the stride
+#   hind <- land[,c(22:42,43:45)]
+#   hind <- hind[,c(grep("Pel_A",colnames(hind)),grep("Pel_P",colnames(hind)),grep("Hip",colnames(hind)),
+#                   grep("Knee",colnames(hind)),grep("Ankle",colnames(hind)),
+#                   grep("Metatarsal",colnames(hind)),grep("Toe",colnames(hind)),grep("Snout",colnames(hind)))]
+#   hind <- na.omit(hind)
+#   hind[,c(grep("X",colnames(hind),grep("Y",colnames(hind))))] <- -1*hind[,c(grep("X",colnames(hind),grep("Y",colnames(hind))))]
+#   start <- KineMeta[which(KineMeta$Trial == name),"Hind_Stance_Start"]
+#   end <- KineMeta[which(KineMeta$Trial == name),"Hind_Swing_End"]
+#   hind <- hind[which.min(abs(as.numeric(rownames(hind)) - start)):which.min(abs(as.numeric(rownames(hind)) - end)),]
+#   
+#   # prep snout landmark
+#   snout <- land[,c(43:45)]
+#   snout <- na.omit(snout)
+#   snout[,c(grep("X",colnames(snout),grep("Y",colnames(snout))))] <- -1*snout[,c(grep("X",colnames(snout),grep("Y",colnames(snout))))]
+#   start <- KineMeta[which(KineMeta$Trial == name),"Hind_Stance_Start"]
+#   end <- KineMeta[which(KineMeta$Trial == name),"Fore_Swing_End"]
+#   snout <- snout[which.min(abs(as.numeric(rownames(snout)) - start)):which.min(abs(as.numeric(rownames(snout)) - end)),]
+#   
+#   # calc body speed
+#   fps <- KineMeta[which(KineMeta$Trial == name),"Frame_Rate"]/KineMeta[which(KineMeta$Trial == name),"Decimation"]
+#   KineData[which(KineData$Trial == name),"Speed"] <- speedKine(snout,fps)$speed
+#   # calc stride length
+#   KineData[which(KineData$Trial == name),"Hind_Stride_Length"] <- speedKine(hind[,13:15],fps)$dist
+#   KineData[which(KineData$Trial == name),"Fore_Stride_Length"] <- speedKine(fore[,13:15],fps)$dist
+#   # calc limb length
+#   KineData[which(KineData$Trial == name),"Arm_Length"] <- limb_length(fore[,7:9],fore[,10:12],fore[,13:15])
+#   KineData[which(KineData$Trial == name),"Leg_Length"] <- limb_length(hind[,7:9],hind[,10:12],hind[,13:15])
+#   
+#   if (all(is.na(fore)) != TRUE) {
+#     combined_fore[[length(combined_fore) + 1]] <- fore
+#   }
+#   if (all(is.na(hind)) != TRUE) {
+#     combined_hind[[length(combined_hind) + 1]] <- hind
+#   }
+#   
+#   remove(land)
+#   remove(fore)
+#   remove(hind)
+#   remove(snout)
+# }
+# 
+# for(i in unique(KineData$ID)) {
+#   KineData[grep(i,KineData$ID),"Arm_Length"] <- tapply(KineData$Arm_Length,KineData$ID,median)[i]
+#   KineData[grep(i,KineData$ID),"Leg_Length"] <- tapply(KineData$Leg_Length,KineData$ID,median)[i]
+# }
+# 
+# # some spatiotemporal calc
+# KineData$Fore_Duty_Factor <- (KineMeta$Fore_Stance_End+1 - KineMeta$Fore_Stance_Start)/(KineMeta$Fore_Swing_End - KineMeta$Fore_Stance_Start)
+# KineData$Hind_Duty_Factor <- (KineMeta$Hind_Stance_End+1 - KineMeta$Hind_Stance_Start)/(KineMeta$Hind_Swing_End - KineMeta$Hind_Stance_Start)
+# KineData$Fore_Stride_Dur <- (KineMeta$Fore_Swing_End - KineMeta$Fore_Stance_Start)/(KineMeta$Frame_Rate/KineMeta$Decimation)
+# KineData$Hind_Stride_Dur <- (KineMeta$Hind_Swing_End - KineMeta$Hind_Stance_Start)/(KineMeta$Frame_Rate/KineMeta$Decimation)
+# KineData$Fore_Stride_Freq <- 1/KineData$Fore_Stride_Dur
+# KineData$Hind_Stride_Freq <- 1/KineData$Hind_Stride_Dur
+# 
+# # save the kine data so far
+# write.csv(KineData,"ClimbKineData.csv",row.names = F,quote = F)
+# 
+# names(combined_fore) <- gsub(".csv","",basename(files))
+# names(combined_hind) <- gsub(".csv","",basename(files))
+# 
+# #interpolate to 101 frames so each column = 1% of stance
+# combined_fore <- lapply(combined_fore, FUN = function(x) interpolateR(x, 101))
+# combined_hind <- lapply(combined_hind, FUN = function(x) interpolateR(x, 101))
+# 
+# # save lists as RDS so that you don't have to run this whole chunk again
+# saveRDS(combined_fore, "fore3Dpts_all.rds")
+# saveRDS(combined_hind, "hind3Dpts_all.rds")
+# 
+# ## Calculate Angles --------------------------------------------------------
+# 
+# # calculate the 3D joint angles
+# KineMeta <- read.csv("ClimbKineMeta.csv") 
+# combined_fore <- readRDS("fore3Dpts_all.rds")
+# combined_hind <- readRDS("hind3Dpts_all.rds")
+# All_fore <- list()
+# All_hind <- list()
+# CalibPlanes <- read.csv("../CameraCalibs/CalibPlanes.csv") 
+# rownames(CalibPlanes) <- CalibPlanes$Calibration
+# 
+# # forelimbs
+# for (i in names(combined_fore)){
+#   calib <- KineMeta$Calibration[which(KineMeta$Trial == i)]
+#   All_fore[i] <- lapply(combined_fore[i], anglecalc,
+#                         planeP1 = as.numeric(CalibPlanes[calib,2:4]),
+#                         planeP2 = as.numeric(CalibPlanes[calib,5:7]),
+#                         planeP3 = as.numeric(CalibPlanes[calib,8:10]))
+# }
+# 
+# # hindlimbs
+# for (i in names(combined_hind)){
+#   calib <- KineMeta$Calibration[which(KineMeta$Trial == i)]
+#   All_hind[i] <- lapply(combined_hind[i], anglecalc,
+#                         planeP1 = as.numeric(CalibPlanes[calib,2:4]),
+#                         planeP2 = as.numeric(CalibPlanes[calib,5:7]),
+#                         planeP3 = as.numeric(CalibPlanes[calib,8:10]))
+# }
+# 
+# #check that there were no errors or NAs
+# which(sapply(All_fore, anyNA))
+# which(sapply(All_hind, anyNA))
+# 
+# #save RDS
+# saveRDS(All_fore, "foreAngles_all.rds")
+# saveRDS(All_hind, "hindAngles_all.rds")
 
 
 # Start Here --------------------------------------------------------------
