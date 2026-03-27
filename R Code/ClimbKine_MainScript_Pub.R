@@ -24,15 +24,15 @@ fill.sp <- setNames(c(c("darkgrey","#8c510a","white","purple")), c("Aneides aene
 
 # unhash the following code to run
 
-# # read in 3D pts and create lists
+## read in 3D pts and create lists
 # combined_fore <- list()
 # combined_hind <- list()
 # 
 # threeD_path <- "../Landmarks/3Dpoints"
 # 
 # files <- list.files(path =threeD_path, full.names = TRUE)
-# KineMeta <- read.csv("ClimbKineMeta.csv") 
-# KineData <- KineMeta[,1:11]
+# KineMeta <- read.csv("ClimbKineMeta.csv")
+# KineData <- KineMeta[,1:13]
 # for (i in 1:length(files)) {
 #   name <- list.files(path =threeD_path, full.names = FALSE)[i]
 #   name <- gsub(".csv","",name)
@@ -40,7 +40,7 @@ fill.sp <- setNames(c(c("darkgrey","#8c510a","white","purple")), c("Aneides aene
 #   if (any(colnames(land) == "Frame")) {
 #     land <- land[,-1]
 #   }
-#   
+# 
 #   # prep forelimb points; trim to just the stride
 #   fore <- land[,c(1:21,43:45)]
 #   fore <- fore[,c(grep("Pec_A",colnames(fore)),grep("Pec_P",colnames(fore)),grep("Shoulder",colnames(fore)),
@@ -51,7 +51,7 @@ fill.sp <- setNames(c(c("darkgrey","#8c510a","white","purple")), c("Aneides aene
 #   start <- KineMeta[which(KineMeta$Trial == name),"Fore_Stance_Start"]
 #   end <- KineMeta[which(KineMeta$Trial == name),"Fore_Swing_End"]
 #   fore <- fore[which.min(abs(as.numeric(rownames(fore)) - start)):which.min(abs(as.numeric(rownames(fore)) - end)),]
-#   
+# 
 #   # prep hindlimb points; trim to just the stride
 #   hind <- land[,c(22:42,43:45)]
 #   hind <- hind[,c(grep("Pel_A",colnames(hind)),grep("Pel_P",colnames(hind)),grep("Hip",colnames(hind)),
@@ -62,7 +62,7 @@ fill.sp <- setNames(c(c("darkgrey","#8c510a","white","purple")), c("Aneides aene
 #   start <- KineMeta[which(KineMeta$Trial == name),"Hind_Stance_Start"]
 #   end <- KineMeta[which(KineMeta$Trial == name),"Hind_Swing_End"]
 #   hind <- hind[which.min(abs(as.numeric(rownames(hind)) - start)):which.min(abs(as.numeric(rownames(hind)) - end)),]
-#   
+# 
 #   # prep snout landmark
 #   snout <- land[,c(43:45)]
 #   snout <- na.omit(snout)
@@ -70,7 +70,7 @@ fill.sp <- setNames(c(c("darkgrey","#8c510a","white","purple")), c("Aneides aene
 #   start <- KineMeta[which(KineMeta$Trial == name),"Hind_Stance_Start"]
 #   end <- KineMeta[which(KineMeta$Trial == name),"Fore_Swing_End"]
 #   snout <- snout[which.min(abs(as.numeric(rownames(snout)) - start)):which.min(abs(as.numeric(rownames(snout)) - end)),]
-#   
+# 
 #   # calc body speed
 #   fps <- KineMeta[which(KineMeta$Trial == name),"Frame_Rate"]/KineMeta[which(KineMeta$Trial == name),"Decimation"]
 #   KineData[which(KineData$Trial == name),"Speed"] <- speedKine(snout,fps)$speed
@@ -80,14 +80,14 @@ fill.sp <- setNames(c(c("darkgrey","#8c510a","white","purple")), c("Aneides aene
 #   # calc limb length
 #   KineData[which(KineData$Trial == name),"Arm_Length"] <- limb_length(fore[,7:9],fore[,10:12],fore[,13:15])
 #   KineData[which(KineData$Trial == name),"Leg_Length"] <- limb_length(hind[,7:9],hind[,10:12],hind[,13:15])
-#   
+# 
 #   if (all(is.na(fore)) != TRUE) {
 #     combined_fore[[length(combined_fore) + 1]] <- fore
 #   }
 #   if (all(is.na(hind)) != TRUE) {
 #     combined_hind[[length(combined_hind) + 1]] <- hind
 #   }
-#   
+# 
 #   remove(land)
 #   remove(fore)
 #   remove(hind)
@@ -98,6 +98,7 @@ fill.sp <- setNames(c(c("darkgrey","#8c510a","white","purple")), c("Aneides aene
 #   KineData[grep(i,KineData$ID),"Arm_Length"] <- tapply(KineData$Arm_Length,KineData$ID,median)[i]
 #   KineData[grep(i,KineData$ID),"Leg_Length"] <- tapply(KineData$Leg_Length,KineData$ID,median)[i]
 # }
+# KineData <- dplyr::relocate(KineData, c(Arm_Length,Leg_Length) , .before = Hand_Area)
 # 
 # # some spatiotemporal calc
 # KineData$Fore_Duty_Factor <- (KineMeta$Fore_Stance_End+1 - KineMeta$Fore_Stance_Start)/(KineMeta$Fore_Swing_End - KineMeta$Fore_Stance_Start)
@@ -107,53 +108,56 @@ fill.sp <- setNames(c(c("darkgrey","#8c510a","white","purple")), c("Aneides aene
 # KineData$Fore_Stride_Freq <- 1/KineData$Fore_Stride_Dur
 # KineData$Hind_Stride_Freq <- 1/KineData$Hind_Stride_Dur
 # 
+# KineData$Hand_Spread <- KineMeta$Hand_Spread
+# KineData$Foot_Spread <- KineMeta$Foot_Spread
+
 # # save the kine data so far
 # write.csv(KineData,"ClimbKineData.csv",row.names = F,quote = F)
-# 
+#
 # names(combined_fore) <- gsub(".csv","",basename(files))
 # names(combined_hind) <- gsub(".csv","",basename(files))
-# 
+#
 # #interpolate to 101 frames so each column = 1% of stance
 # combined_fore <- lapply(combined_fore, FUN = function(x) interpolateR(x, 101))
 # combined_hind <- lapply(combined_hind, FUN = function(x) interpolateR(x, 101))
-# 
+#
 # # save lists as RDS so that you don't have to run this whole chunk again
 # saveRDS(combined_fore, "fore3Dpts_all.rds")
 # saveRDS(combined_hind, "hind3Dpts_all.rds")
-# 
+
 # ## Calculate Angles --------------------------------------------------------
-# 
-# # calculate the 3D joint angles
-# KineMeta <- read.csv("ClimbKineMeta.csv") 
+
+## calculate the 3D joint angles
+# KineData <- read.csv("ClimbKineData.csv")
 # combined_fore <- readRDS("fore3Dpts_all.rds")
 # combined_hind <- readRDS("hind3Dpts_all.rds")
 # All_fore <- list()
 # All_hind <- list()
-# CalibPlanes <- read.csv("../CameraCalibs/CalibPlanes.csv") 
+# CalibPlanes <- read.csv("../CameraCalibs/CalibPlanes.csv")
 # rownames(CalibPlanes) <- CalibPlanes$Calibration
-# 
+#
 # # forelimbs
 # for (i in names(combined_fore)){
-#   calib <- KineMeta$Calibration[which(KineMeta$Trial == i)]
+#   calib <- KineData$Calibration[which(KineData$Trial == i)]
 #   All_fore[i] <- lapply(combined_fore[i], anglecalc,
 #                         planeP1 = as.numeric(CalibPlanes[calib,2:4]),
 #                         planeP2 = as.numeric(CalibPlanes[calib,5:7]),
 #                         planeP3 = as.numeric(CalibPlanes[calib,8:10]))
 # }
-# 
+#
 # # hindlimbs
 # for (i in names(combined_hind)){
-#   calib <- KineMeta$Calibration[which(KineMeta$Trial == i)]
+#   calib <- KineData$Calibration[which(KineData$Trial == i)]
 #   All_hind[i] <- lapply(combined_hind[i], anglecalc,
 #                         planeP1 = as.numeric(CalibPlanes[calib,2:4]),
 #                         planeP2 = as.numeric(CalibPlanes[calib,5:7]),
 #                         planeP3 = as.numeric(CalibPlanes[calib,8:10]))
 # }
-# 
+#
 # #check that there were no errors or NAs
 # which(sapply(All_fore, anyNA))
 # which(sapply(All_hind, anyNA))
-# 
+#
 # #save RDS
 # saveRDS(All_fore, "foreAngles_all.rds")
 # saveRDS(All_hind, "hindAngles_all.rds")
@@ -163,7 +167,6 @@ fill.sp <- setNames(c(c("darkgrey","#8c510a","white","purple")), c("Aneides aene
 ## Load Data --------------------------------------------------------
 
 # load data back in
-KineMeta <- read.csv("ClimbKineMeta.csv") 
 KineData <- read.csv("ClimbKineData.csv") 
 rownames(KineData) <- KineData$Trial
 
@@ -171,20 +174,15 @@ rownames(KineData) <- KineData$Trial
 KineData$Speed <- KineData$Speed/KineData$SVL
 KineData$Fore_Stride_Length <- KineData$Fore_Stride_Length/KineData$SVL
 KineData$Hind_Stride_Length <- KineData$Hind_Stride_Length/KineData$SVL
-FootData <- read.csv("ClimbKineFootSize.csv") 
-KineData$HandArea <- NA
-KineData$FootArea <- NA
-for (i in unique(KineData$ID)) {
-  KineData[which(KineData$ID == i), "ManusArea"] <- FootData[which(FootData$ID == i), "ManusArea"]
-  KineData[which(KineData$ID == i), "PesArea"] <- FootData[which(FootData$ID == i), "PesArea"]
-}
 
-# correct lateral limb spread by SVL
+# correct lateral limb spread and hip height by SVL
 foreAngles <-readRDS("foreAngles_all.rds")
 hindAngles <- readRDS("hindAngles_all.rds")
-for (i in 1:nrow(KineMeta)) {
-  foreAngles[[KineMeta$Trial[i]]]$spread <- foreAngles[[KineData$Trial[i]]]$spread/(KineData$SVL[i])
-  hindAngles[[KineMeta$Trial[i]]]$spread <- hindAngles[[KineData$Trial[i]]]$spread/(KineData$SVL[i])
+for (i in 1:nrow(KineData)) {
+  foreAngles[[KineData$Trial[i]]]$spread <- foreAngles[[KineData$Trial[i]]]$spread/(KineData$SVL[i])
+  hindAngles[[KineData$Trial[i]]]$spread <- hindAngles[[KineData$Trial[i]]]$spread/(KineData$SVL[i])
+  foreAngles[[KineData$Trial[i]]]$hip <- foreAngles[[KineData$Trial[i]]]$hip/(KineData$SVL[i])
+  hindAngles[[KineData$Trial[i]]]$hip <- hindAngles[[KineData$Trial[i]]]$hip/(KineData$SVL[i])
 }
 
 # subset kinematics for stance phase 
@@ -195,19 +193,24 @@ for (i in 1:nrow(KineData)) {
   hindAngles_stance[[i]] <- hindAngles[[i]][1:round(KineData$Hind_Duty_Factor[i]*100,0),]
 }
 
-# calculate the mean autopod angle and limb spread during stance
+# calculate the mean foot angle and limb spread during stance
 KineData$Hand_Angle <- 0
 KineData$Foot_Angle <- 0
-KineData$Hand_Spread <- 0
-KineData$Foot_Spread <- 0
+KineData$Forelimb_Spread <- 0
+KineData$Hindlimb_Spread <- 0
 for ( i in 1:nrow(KineData)) {
   trial <- KineData$Trial[i]
   KineData$Hand_Angle[i] <- mean(foreAngles_stance[[i]]$foot)
   KineData$Foot_Angle[i] <- mean(hindAngles_stance[[i]]$foot)
-  KineData$Hand_Spread[i] <- mean(foreAngles_stance[[i]]$spread)
-  KineData$Foot_Spread[i] <- mean(hindAngles_stance[[i]]$spread)
+  KineData$Forelimb_Spread[i] <- mean(foreAngles_stance[[i]]$spread)
+  KineData$Hindlimb_Spread[i] <- mean(hindAngles_stance[[i]]$spread)
 }
 
+# subset individual morphometric data
+ind.data <- KineData[which(duplicated(KineData$ID) == FALSE),]
+ind.data <- ind.data[,1:9]
+rownames(ind.data) <- ind.data$ID
+ind.data$Species <- factor(ind.data$Species, levels = c("Aneides aeneus", "Aneides lugubris", "Aneides hardii", "Plethodon glutinosus"))
 
 # Plot Profiles -----------------------------------------------------------
 
@@ -251,6 +254,8 @@ AbAd_Walk <- PlotKine(rbind(Aaen_hind_0_MeanSE$abad,Alug_hind_0_MeanSE$abad,Ahar
   annotate("text", x=90, y=-18, label= "Adduction", size = 3)+annotate("text", x=90, y=59, label= "Abduction", size = 3)
 ProRet_Walk <- PlotKine(rbind(Aaen_hind_0_MeanSE$proret,Alug_hind_0_MeanSE$proret,Ahar_hind_0_MeanSE$proret,Pglu_hind_0_MeanSE$proret), var = "Species", ylab = "Pro vs Ret (°)", rect = T, ylim = c(-70,70)) +
   annotate("text", x=90, y=-68, label= "Retraction", size = 3)+annotate("text", x=89, y=69, label= "Protraction", size = 3)
+LAR_Walk <- PlotKine(rbind(Aaen_hind_0_MeanSE$lar,Alug_hind_0_MeanSE$lar,Ahar_hind_0_MeanSE$lar,Pglu_hind_0_MeanSE$lar), var = "Species", ylab = "Femur LAR (°)", rect = T, ylim = c(-20,90))  +
+  annotate("text", x=91, y=-17, label= "Posterior", size = 3)+annotate("text", x=91, y=87, label= "Anterior", size = 3)
 Elbow_Walk <- PlotKine(rbind(Aaen_hind_0_MeanSE$elbow,Alug_hind_0_MeanSE$elbow,Ahar_hind_0_MeanSE$elbow,Pglu_hind_0_MeanSE$elbow), var = "Species", ylab = "Knee (°)", ylim = c(50, 180)) +
   annotate("text", x=93, y=53, label= "Flexion", size = 3)+annotate("text", x=90, y=179, label= "Extension", size = 3)
 Wrist_Walk <- PlotKine(rbind(Aaen_hind_0_MeanSE$wrist,Alug_hind_0_MeanSE$wrist,Ahar_hind_0_MeanSE$wrist,Pglu_hind_0_MeanSE$wrist), var = "Species", ylab = "Ankle (°)", ylim = c(50, 180)) +
@@ -261,14 +266,16 @@ AbAd_Climb <- PlotKine(rbind(Aaen_hind_90_MeanSE$abad,Alug_hind_90_MeanSE$abad,A
   annotate("text", x=90, y=-18, label= "Adduction", size = 3)+annotate("text", x=90, y=59, label= "Abduction", size = 3)
 ProRet_Climb <- PlotKine(rbind(Aaen_hind_90_MeanSE$proret,Alug_hind_90_MeanSE$proret,Ahar_hind_80_MeanSE$proret,Pglu_hind_90_MeanSE$proret), var = "Species", ylab = "Pro vs Ret (°)", rect = T, ylim = c(-70,70)) +
   annotate("text", x=90, y=-67, label= "Retraction", size = 3)+annotate("text", x=89, y=69, label= "Protraction", size = 3)
+LAR_Climb <- PlotKine(rbind(Aaen_hind_90_MeanSE$lar,Alug_hind_90_MeanSE$lar,Ahar_hind_80_MeanSE$lar,Pglu_hind_90_MeanSE$lar), var = "Species", ylab = "Femur LAR (°)", rect = T, ylim = c(-20,90))  +
+  annotate("text", x=91, y=-17, label= "Posterior", size = 3)+annotate("text", x=91, y=87, label= "Anterior", size = 3)
 Elbow_Climb <- PlotKine(rbind(Aaen_hind_90_MeanSE$elbow,Alug_hind_90_MeanSE$elbow,Ahar_hind_80_MeanSE$elbow,Pglu_hind_90_MeanSE$elbow), var = "Species", ylab = "Knee (°)", ylim = c(50, 180)) +
   annotate("text", x=93, y=53, label= "Flexion", size = 3)+annotate("text", x=90, y=179, label= "Extension", size = 3)
 Wrist_Climb <- PlotKine(rbind(Aaen_hind_90_MeanSE$wrist,Alug_hind_90_MeanSE$wrist,Ahar_hind_80_MeanSE$wrist,Pglu_hind_90_MeanSE$wrist), var = "Species", ylab = "Ankle (°)", ylim = c(50, 180)) +
   annotate("text", x=93, y=53, label= "Flexion", size = 3)+annotate("text", x=90, y=179, label= "Extension", size = 3)
 
-plot_list <- list(AbAd_Walk,AbAd_Climb,ProRet_Walk,ProRet_Climb,Elbow_Walk,Elbow_Climb,Wrist_Walk,Wrist_Climb)
+plot_list <- list(AbAd_Walk,AbAd_Climb,ProRet_Walk,ProRet_Climb,LAR_Walk,LAR_Climb,Elbow_Walk,Elbow_Climb,Wrist_Walk,Wrist_Climb)
 wrap_plots(plot_list, ncol =2, guides = "collect") +  plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom') 
-# ggsave("Figure 3.pdf", width = 7.25, height = 7.6, units = "in")
+#ggsave("Figure 3.pdf", width = 7.25, height = 8, units = "in")
 
 # DFA --------------------------------------------------------------------
 ## Prep Data ---------------------------------------------------------------
@@ -278,7 +285,7 @@ ForeKine$Incline <- factor(ForeKine$Incline)
 levels(ForeKine$Incline) <- c("0","45","80","90")
 ForeKine$Limb <- "fore"
 ForeKine$Group <- paste0(ForeKine$Species,"_",ForeKine$Incline)
-ForeKine <- cbind(ForeKine, KineData[,c("Hand_Angle","Hand_Spread")])
+ForeKine <- cbind(ForeKine, KineData[,c("Hand_Angle","Hand_Spread", "Forelimb_Spread")])
 ForeKine$Hand_Angle <- ForeKine$Hand_Angle + 90
 ForeKine$Duty_Factor <- KineData$Fore_Duty_Factor
 ForeKine$Stride_Length <- KineData$Fore_Stride_Length
@@ -299,6 +306,12 @@ for ( i in ForeKine$Trial) {
   ForeKine[i,"yaw_ips_max"] <- abs(max(foreAngles[[i]]$yaw))
   ForeKine[i,"yaw_cont_max"] <- abs(max(foreAngles[[i]]$yaw*-1))
   ForeKine[i,"yaw_exc"] <- max(foreAngles[[i]]$yaw)-min(foreAngles[[i]]$yaw) 
+  ForeKine[i,"lar_ant_max"] <- abs(max(foreAngles[[i]]$lar))
+  ForeKine[i,"lar_post_max"] <- abs(max(foreAngles[[i]]$lar*-1))
+  ForeKine[i,"lar_exc"] <- max(foreAngles[[i]]$lar)-min(foreAngles[[i]]$lar) 
+  ForeKine[i,"hip_max"] <- abs(max(foreAngles[[i]]$hip))
+  ForeKine[i,"hip_min"] <- abs(max(foreAngles[[i]]$hip))
+  ForeKine[i,"hip_exc"] <- max(foreAngles[[i]]$hip)-min(foreAngles[[i]]$hip) 
 }
 
 HindKine <- KineData[,c("Species","ID","Trial","Incline","SVL")]
@@ -306,7 +319,7 @@ HindKine$Incline <- factor(HindKine$Incline)
 levels(HindKine$Incline) <- c("0","45","80","90")
 HindKine$Limb <- "hind"
 HindKine$Group <- paste0(HindKine$Species,"_",HindKine$Incline)
-HindKine <- cbind(HindKine, KineData[,c("Foot_Angle","Foot_Spread")])
+HindKine <- cbind(HindKine, KineData[,c("Foot_Angle","Foot_Spread", "Hindlimb_Spread")])
 HindKine$Foot_Angle <- HindKine$Foot_Angle + 90
 HindKine$Duty_Factor <- KineData$Hind_Duty_Factor
 HindKine$Stride_Length <- KineData$Hind_Stride_Length
@@ -327,6 +340,12 @@ for ( i in HindKine$Trial) {
   HindKine[i,"yaw_ips_max"] <- abs(max(hindAngles[[i]]$yaw))
   HindKine[i,"yaw_cont_max"] <- abs(max(hindAngles[[i]]$yaw*-1))
   HindKine[i,"yaw_exc"] <- max(hindAngles[[i]]$yaw)-min(hindAngles[[i]]$yaw) 
+  HindKine[i,"lar_ant_max"] <- abs(max(hindAngles[[i]]$lar))
+  HindKine[i,"lar_post_max"] <- abs(max(hindAngles[[i]]$lar*-1))
+  HindKine[i,"lar_exc"] <- max(hindAngles[[i]]$lar)-min(hindAngles[[i]]$lar) 
+  HindKine[i,"hip_max"] <- abs(max(hindAngles[[i]]$hip))
+  HindKine[i,"hip_min"] <- abs(max(hindAngles[[i]]$hip))
+  HindKine[i,"hip_exc"] <- max(hindAngles[[i]]$hip)-min(hindAngles[[i]]$hip) 
 }
 
 ## Perfom DFA --------------------------------------------------------------
@@ -334,36 +353,36 @@ for ( i in HindKine$Trial) {
 colnames(ForeKine) <- colnames(HindKine)
 
 BothKine <- rbind(HindKine,ForeKine)
-BothKine$Group[1:840] <- paste0(HindKine$Group,"_hind")
-BothKine$Group[841:1680] <- paste0(ForeKine$Group,"_fore")
+BothKine$Group[1:735] <- paste0(HindKine$Group,"_hind")
+BothKine$Group[736:1470] <- paste0(ForeKine$Group,"_fore")
 
-
-dfa.data <- BothKine[,-c(1:6,10:12)]
+dfa.data <- BothKine[,-c(1:6,11:13)]
 dfa.data[,-1] <- log(dfa.data[,-1])
+dfa.data[,-1] <- scale(dfa.data[,-1],scale = T, center = T)
 
 dfa <- lda(Group ~ ., dfa.data[,])
-dfa$scaling[,2] <- dfa$scaling[,2]*-1
 predictions <- predict(dfa, dfa.data)
 
 ldascores <- data.frame(predictions$x)
 ldascores <- cbind(Species = as.factor(BothKine$Species),Incline = as.factor(BothKine$Incline), Group = as.factor(BothKine$Group), ldascores)
-ldascores$Limb[1:840] <- "hind"
-ldascores$Limb[841:1680] <- "fore"
+ldascores$Limb[1:735]  <- "hind"
+ldascores$Limb[736:1470] <- "fore"
 
 # plot biplot; df 1 vs df 2
 plot(predictions$x[,2]~predictions$x[,1], 
      pch =c(19,17,7,3)[as.factor(BothKine$Incline)], 
      col = "transparent")
-lda.arrows(dfa, myscale = .5,tex = 0.5)
+lda.arrows(dfa, myscale = 3,tex = 0.5)
 
 # plot biplot; df 2 vs df 3
 plot(predictions$x[,3]~predictions$x[,2],
      pch =c(19,17,7,3)[as.factor(BothKine$Incline)],
      col = "transparent")
-lda.arrows(dfa, myscale = .5,tex = 0.5, choices= c(2,3))
+lda.arrows(dfa, myscale = 3,tex = 0.5, choices= c(2,3))
 
-## Plot w/ Arrows ----------------------------------------------------------
+## Plot w/ ggplot  ----------------------------------------------------------
 
+# make a nice version of the DFA plot
 group <- c(paste0(KineData$ID,"_",KineData$Incline,"_hind"),paste0(KineData$ID,"_",KineData$Incline,"_fore"))
 ld1 <- tapply(ldascores$LD1,group,mean)
 ld2 <- tapply(ldascores$LD2,group,mean)
@@ -429,21 +448,22 @@ ggplot() +
   scale_shape_manual(values = c(21,22,25,24))+
   scale_colour_manual(values = col.sp)+
   scale_fill_manual(values = col.sp)+
-  labs(x= "LD1: 49.8%", y = "LD2: 16.7%")+
-  xlim(-6.5,6.5) + ylim(-5.17,5.17)+
+  labs(x= "LD1: 64.9%", y = "LD2: 9.6%")+
   guides(colour=guide_legend(title="Species"),
          shape=guide_legend(title="Incline"))+
   theme_classic() +
   theme(axis.text = element_text(size = 11),
         axis.title = element_text(size = 13))
 
-# ggsave("Figure 5.pdf", width = 5.39, height = 4.89, units = "in")
+#ggsave("Figure 5.pdf", width = 5.39, height = 4.89, units = "in")
 
-# LMER --------------------------------------------------------------------
+
+# LMMs --------------------------------------------------------------------
 # perform all of the different LMMs
 
 ## speed --------------------------------------------------------------------
-lm <- nlme::lme(Speed~as.factor(Incline)*Species*log(SVL), random =  ~1|ID, data = KineData)
+lm <- nlme::lme(Speed~as.factor(Incline)*Species+log(SVL), random =  ~1|ID, data = KineData)
+anova(lm)
 performance::r2_nakagawa(lm)
 speed_sum <- emmeans(lm, ~ Species | Incline | SVL)
 speed_sum <- data.frame(speed_sum[1:16])
@@ -455,7 +475,8 @@ duty_comb <- rbind.fill(KineData[,c("Species","ID","Trial","Incline","SVL")],
 duty_comb$Limb <- c(rep("fore",nrow(KineData)),rep("hind",nrow(KineData)))
 duty_comb$Duty_Factor <- c(KineData$Fore_Duty_Factor,KineData$Hind_Duty_Factor)
 
-lm <- nlme::lme(Duty_Factor~as.factor(Incline)*Limb*Species*log(SVL), random =  ~1|ID, data = duty_comb)
+lm <- nlme::lme(Duty_Factor~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = duty_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
 duty_sum <- emmeans(lm, ~ Species | Incline | Limb | SVL)
 duty_sum <- data.frame(duty_sum[1:32])
@@ -467,7 +488,8 @@ slength_comb <- rbind.fill(KineData[,c("Species","ID","Trial","Incline","SVL")],
 slength_comb$Limb <- c(rep("fore",nrow(KineData)),rep("hind",nrow(KineData)))
 slength_comb$Stride_Length <- c(KineData$Fore_Stride_Length,KineData$Hind_Stride_Length)
 
-lm <- nlme::lme(Stride_Length~as.factor(Incline)*Limb*Species*log(SVL), random =  ~1|ID, data = slength_comb)
+lm <- nlme::lme(Stride_Length~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = slength_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
 slength_sum <- emmeans(lm, ~ Species | Incline | Limb | SVL)
 slength_sum <- data.frame(slength_sum[1:32])
@@ -480,7 +502,8 @@ sfreq_comb <- rbind.fill(KineData[,c("Species","ID","Trial","Incline","SVL")],
 sfreq_comb$Limb <- c(rep("fore",nrow(KineData)),rep("hind",nrow(KineData)))
 sfreq_comb$Stride_Freq <- c(KineData$Fore_Stride_Freq,KineData$Hind_Stride_Freq)
 
-lm <- nlme::lme(Stride_Freq~as.factor(Incline)*Limb*Species*log(SVL), random =  ~1|ID, data = sfreq_comb)
+lm <- nlme::lme(Stride_Freq~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = sfreq_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
 sfreq_sum <- emmeans(lm, ~ Species | Incline | Limb | SVL)
 sfreq_sum <- data.frame(sfreq_sum[1:32])
@@ -493,25 +516,28 @@ abad_comb$SVL <- rep(KineData[,"SVL"],2)
 abad_comb$Species <- as.factor(abad_comb$Species)
 levels(abad_comb$Species) <- c("Aneides aeneus", "Aneides hardii", "Aneides lugubris", "Plethodon glutinosus")
 
-lm <- nlme::lme(Max~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = abad_comb)
+lm <- nlme::lme(Max~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = abad_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em1 <- data.frame(em1[1:32])
-colnames(em1)[5:6] <- c("max_mean","max_se")
+abad_em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+abad_em1 <- data.frame(abad_em1[1:32])
+colnames(abad_em1)[5:6] <- c("max_mean","max_se")
 
-lm <- nlme::lme(Min~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = abad_comb)
+lm <- nlme::lme(Min~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = abad_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em2 <- data.frame(em2[1:32])
-colnames(em2)[5:6] <- c("min_mean","min_se")
+abad_em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+abad_em2 <- data.frame(abad_em2[1:32])
+colnames(abad_em2)[5:6] <- c("min_mean","min_se")
 
-lm <- nlme::lme(Exc~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = abad_comb)
+lm <- nlme::lme(Exc~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = abad_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em3 <- data.frame(em3[1:32])
-colnames(em3)[5:6] <- c("exc_mean","exc_se")
+abad_em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+abad_em3 <- data.frame(abad_em3[1:32])
+colnames(abad_em3)[5:6] <- c("exc_mean","exc_se")
 
-abad_sum <- cbind(em1[,c(1:3,5:6)],em2[,5:6],em3[,5:6])
+abad_sum <- cbind(abad_em1[,c(1:3,5:6)],abad_em2[,5:6],abad_em3[,5:6])
 abad_sum$Species <- factor(abad_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
 
 ## proret --------------------------------------------------------------------
@@ -520,26 +546,59 @@ proret_comb$SVL <- rep(KineData[,"SVL"],2)
 proret_comb$Species <- as.factor(proret_comb$Species)
 levels(proret_comb$Species) <- c("Aneides aeneus", "Aneides hardii", "Aneides lugubris", "Plethodon glutinosus")
 
-lm <- nlme::lme(Max~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = proret_comb)
+lm <- nlme::lme(Max~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = proret_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em1 <- data.frame(em1[1:32])
-colnames(em1)[5:6] <- c("max_mean","max_se")
+proret_em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+proret_em1 <- data.frame(proret_em1[1:32])
+colnames(proret_em1)[5:6] <- c("max_mean","max_se")
 
-lm <- nlme::lme(Min~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = proret_comb)
+lm <- nlme::lme(Min~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = proret_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em2 <- data.frame(em2[1:32])
-colnames(em2)[5:6] <- c("min_mean","min_se")
+proret_em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+proret_em2 <- data.frame(proret_em2[1:32])
+colnames(proret_em2)[5:6] <- c("min_mean","min_se")
 
-lm <- nlme::lme(Exc~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = proret_comb)
+lm <- nlme::lme(Exc~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = proret_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em3 <- data.frame(em3[1:32])
-colnames(em3)[5:6] <- c("exc_mean","exc_se")
+proret_em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+proret_em3 <- data.frame(proret_em3[1:32])
+colnames(proret_em3)[5:6] <- c("exc_mean","exc_se")
 
-proret_sum <- cbind(em1[,c(1:3,5:6)],em2[,5:6],em3[,5:6])
+proret_sum <- cbind(proret_em1[,c(1:3,5:6)],proret_em2[,5:6],proret_em3[,5:6])
 proret_sum$Species <- factor(proret_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
+
+## lar --------------------------------------------------------------------
+lar_comb <- rbind(LMER_Prep(foreAngles,"fore")$lar,LMER_Prep(hindAngles,"hind")$lar)
+lar_comb$SVL <- rep(KineData[,"SVL"],2)
+lar_comb$Species <- as.factor(lar_comb$Species)
+levels(lar_comb$Species) <- c("Aneides aeneus", "Aneides hardii", "Aneides lugubris", "Plethodon glutinosus")
+
+lm <- nlme::lme(Max~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = lar_comb)
+anova(lm)
+performance::r2_nakagawa(lm)
+lar_em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+lar_em1 <- data.frame(lar_em1[1:32])
+colnames(lar_em1)[5:6] <- c("max_mean","max_se")
+
+lm <- nlme::lme(Min~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = lar_comb)
+anova(lm)
+performance::r2_nakagawa(lm)
+lar_em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+lar_em2 <- data.frame(lar_em2[1:32])
+colnames(lar_em2)[5:6] <- c("min_mean","min_se")
+
+lm <- nlme::lme(Exc~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = lar_comb)
+anova(lm)
+performance::r2_nakagawa(lm)
+lar_em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+lar_em3 <- data.frame(lar_em3[1:32])
+colnames(lar_em3)[5:6] <- c("exc_mean","exc_se")
+
+lar_sum <- cbind(lar_em1[,c(1:3,5:6)],lar_em2[,5:6],lar_em3[,5:6])
+lar_sum$Species <- factor(lar_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
 
 ## elbow/knee --------------------------------------------------------------------
 elbow_comb <- rbind(LMER_Prep(foreAngles,"fore")$elbow,LMER_Prep(hindAngles,"hind")$elbow)
@@ -547,25 +606,28 @@ elbow_comb$SVL <- rep(KineData[,"SVL"],2)
 elbow_comb$Species <- as.factor(elbow_comb$Species)
 levels(elbow_comb$Species) <- c("Aneides aeneus", "Aneides hardii", "Aneides lugubris", "Plethodon glutinosus")
 
-lm <- nlme::lme(Max~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = elbow_comb)
+lm <- nlme::lme(Max~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = elbow_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em1 <- data.frame(em1[1:32])
-colnames(em1)[5:6] <- c("max_mean","max_se")
+ek_em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+ek_em1 <- data.frame(ek_em1[1:32])
+colnames(ek_em1)[5:6] <- c("max_mean","max_se")
 
-lm <- nlme::lme(Min~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = elbow_comb)
+lm <- nlme::lme(Min~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = elbow_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em2 <- data.frame(em2[1:32])
-colnames(em2)[5:6] <- c("min_mean","min_se")
+ek_em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+ek_em2 <- data.frame(ek_em2[1:32])
+colnames(ek_em2)[5:6] <- c("min_mean","min_se")
 
-lm <- nlme::lme(Exc~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = elbow_comb)
+lm <- nlme::lme(Exc~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = elbow_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em3 <- data.frame(em3[1:32])
-colnames(em3)[5:6] <- c("exc_mean","exc_se")
+ek_em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+ek_em3 <- data.frame(ek_em3[1:32])
+colnames(ek_em3)[5:6] <- c("exc_mean","exc_se")
 
-elbow_sum <- cbind(em1[,c(1:3,5:6)],em2[,5:6],em3[,5:6])
+elbow_sum <- cbind(ek_em1[,c(1:3,5:6)],ek_em2[,5:6],ek_em3[,5:6])
 elbow_sum$Species <- factor(elbow_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
 
 
@@ -575,25 +637,28 @@ wrist_comb$SVL <- rep(KineData[,"SVL"],2)
 wrist_comb$Species <- as.factor(wrist_comb$Species)
 levels(wrist_comb$Species) <- c("Aneides aeneus", "Aneides hardii", "Aneides lugubris", "Plethodon glutinosus")
 
-lm <- nlme::lme(Max~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = wrist_comb)
+lm <- nlme::lme(Max~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = wrist_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em1 <- data.frame(em1[1:32])
-colnames(em1)[5:6] <- c("max_mean","max_se")
+wa_em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+wa_em1 <- data.frame(wa_em1[1:32])
+colnames(wa_em1)[5:6] <- c("max_mean","max_se")
 
-lm <- nlme::lme(Min~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = wrist_comb)
+lm <- nlme::lme(Min~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = wrist_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em2 <- data.frame(em2[1:32])
-colnames(em2)[5:6] <- c("min_mean","min_se")
+wa_em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+wa_em2 <- data.frame(wa_em2[1:32])
+colnames(wa_em2)[5:6] <- c("min_mean","min_se")
 
-lm <- nlme::lme(Exc~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = wrist_comb)
+lm <- nlme::lme(Exc~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = wrist_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em3 <- data.frame(em3[1:32])
-colnames(em3)[5:6] <- c("exc_mean","exc_se")
+wa_em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+wa_em3 <- data.frame(wa_em3[1:32])
+colnames(wa_em3)[5:6] <- c("exc_mean","exc_se")
 
-wrist_sum <- cbind(em1[,c(1:3,5:6)],em2[,5:6],em3[,5:6])
+wrist_sum <- cbind(wa_em1[,c(1:3,5:6)],wa_em2[,5:6],wa_em3[,5:6])
 wrist_sum$Species <- factor(wrist_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
 
 ## yaw --------------------------------------------------------------------
@@ -602,26 +667,30 @@ yaw_comb$SVL <- rep(KineData[,"SVL"],2)
 yaw_comb$Species <- as.factor(yaw_comb$Species)
 levels(yaw_comb$Species) <- c("Aneides aeneus", "Aneides hardii", "Aneides lugubris", "Plethodon glutinosus")
 
-lm <- nlme::lme(Max~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = yaw_comb)
+lm <- nlme::lme(Max~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = yaw_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em1 <- data.frame(em1[1:32])
-colnames(em1)[5:6] <- c("max_mean","max_se")
+yaw_em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+yaw_em1 <- data.frame(yaw_em1[1:32])
+colnames(yaw_em1)[5:6] <- c("max_mean","max_se")
 
-lm <- nlme::lme(Min~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = yaw_comb)
+lm <- nlme::lme(Min~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = yaw_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em2 <- data.frame(em2[1:32])
-colnames(em2)[5:6] <- c("min_mean","min_se")
+yaw_em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+yaw_em2 <- data.frame(yaw_em2[1:32])
+colnames(yaw_em2)[5:6] <- c("min_mean","min_se")
 
-lm <- nlme::lme(Exc~Incline*Limb*Species*log(SVL), random =  ~1|ID, data = yaw_comb)
+lm <- nlme::lme(Exc~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = yaw_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-em3 <- data.frame(em3[1:32])
-colnames(em3)[5:6] <- c("exc_mean","exc_se")
+yaw_em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+yaw_em3 <- data.frame(yaw_em3[1:32])
+colnames(yaw_em3)[5:6] <- c("exc_mean","exc_se")
 
-yaw_sum <- cbind(em1[,c(1:3,5:6)],em2[,5:6],em3[,5:6])
+yaw_sum <- cbind(yaw_em1[,c(1:3,5:6)],yaw_em2[,5:6],yaw_em3[,5:6])
 yaw_sum$Species <- factor(yaw_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
+
 
 ## foot angle --------------------------------------------------------------------
 foot_comb <- rbind.fill(KineData[,c("Species","ID","Trial","Incline","SVL")],
@@ -629,31 +698,80 @@ foot_comb <- rbind.fill(KineData[,c("Species","ID","Trial","Incline","SVL")],
 foot_comb$Limb <- c(rep("fore",nrow(KineData)),rep("hind",nrow(KineData)))
 foot_comb$Foot_Angle <- c(KineData$Hand_Angle,KineData$Foot_Angle)
 
-lm <- nlme::lme(Foot_Angle~as.factor(Incline)*Limb*Species*log(SVL), random =  ~1|ID, data = foot_comb)
+lm <- nlme::lme(Foot_Angle~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = foot_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
 foot_sum <- emmeans(lm, ~ Species | Incline | Limb | SVL)
 foot_sum <- data.frame(foot_sum[1:32])
 colnames(foot_sum)[5:6] <- c("mean","se")
 foot_sum$Species <- factor(foot_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
 
-## spread --------------------------------------------------------------------
-spread_comb <- rbind.fill(KineData[,c("Species","ID","Trial","Incline","SVL")],
+## limb spread --------------------------------------------------------------------
+lspread_comb <- rbind.fill(KineData[,c("Species","ID","Trial","Incline","SVL")],
                           KineData[,c("Species","ID","Trial","Incline","SVL")])
-spread_comb$Limb <- c(rep("fore",nrow(KineData)),rep("hind",nrow(KineData)))
-spread_comb$Spread <- c(KineData$Hand_Spread,KineData$Foot_Spread)
+lspread_comb$Limb <- c(rep("fore",nrow(KineData)),rep("hind",nrow(KineData)))
+lspread_comb$Spread <- c(KineData$Forelimb_Spread,KineData$Hindlimb_Spread)
 
-lm <- nlme::lme(Spread~as.factor(Incline)*Limb*Species*log(SVL), random =  ~1|ID, data = spread_comb)
+lm <- nlme::lme(Spread~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = lspread_comb)
+anova(lm)
 performance::r2_nakagawa(lm)
-spread_sum <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-spread_sum <- data.frame(spread_sum[1:32])
-colnames(spread_sum)[5:6] <- c("mean","se")
-spread_sum$Species <- factor(spread_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
+lspread_sum <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+lspread_sum <- data.frame(lspread_sum[1:32])
+colnames(lspread_sum)[5:6] <- c("mean","se")
+lspread_sum$Species <- factor(lspread_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
+
+
+## digit spread  --------------------------------------------------------------------
+dspread_comb <- rbind.fill(KineData[,c("Species","ID","Trial","Incline","SVL")],
+                          KineData[,c("Species","ID","Trial","Incline","SVL")])
+dspread_comb$Limb <- c(rep("fore",nrow(KineData)),rep("hind",nrow(KineData)))
+dspread_comb$Spread <- c(KineData$Hand_Spread,KineData$Foot_Spread)
+
+lm <- nlme::lme(Spread~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = dspread_comb)
+anova(lm)
+performance::r2_nakagawa(lm)
+dspread_sum <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+dspread_sum <- data.frame(dspread_sum[1:32])
+colnames(dspread_sum)[5:6] <- c("mean","se")
+dspread_sum$Species <- factor(dspread_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
+
+
+## height --------------------------------------------------------------------
+hip_comb <- rbind(LMER_Prep(foreAngles,"fore")$hip,LMER_Prep(hindAngles,"hind")$hip)
+hip_comb$SVL <- rep(KineData[,"SVL"],2)
+hip_comb$Species <- as.factor(hip_comb$Species)
+levels(hip_comb$Species) <- c("Aneides aeneus", "Aneides hardii", "Aneides lugubris", "Plethodon glutinosus")
+
+lm <- nlme::lme(Max~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = hip_comb)
+anova(lm)
+performance::r2_nakagawa(lm)
+hip_em1 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+hip_em1 <- data.frame(hip_em1[1:32])
+colnames(hip_em1)[5:6] <- c("max_mean","max_se")
+
+lm <- nlme::lme(Min~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = hip_comb)
+anova(lm)
+performance::r2_nakagawa(lm)
+hip_em2 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+hip_em2 <- data.frame(hip_em2[1:32])
+colnames(hip_em2)[5:6] <- c("min_mean","min_se")
+
+lm <- nlme::lme(Exc~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = hip_comb)
+anova(lm)
+performance::r2_nakagawa(lm)
+hip_em3 <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+hip_em3 <- data.frame(hip_em3[1:32])
+colnames(hip_em3)[5:6] <- c("exc_mean","exc_se")
+
+hip_sum <- cbind(hip_em1[,c(1:3,5:6)],hip_em2[,5:6],hip_em3[,5:6])
+hip_sum$Species <- factor(hip_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
 
 
 # Gait Boxplots -----------------------------------------------------------
 
 # For Figure 4 plot morphology and gait parameters
 
+#### speed ####
 a <- ggplot(speed_sum,aes(x = as.factor(Incline), y= emmean))+
   geom_pointrange(aes(ymin = emmean-SE, ymax = emmean+SE, 
                       color = Species, fill = Species, shape = Species),
@@ -668,6 +786,7 @@ a <- ggplot(speed_sum,aes(x = as.factor(Incline), y= emmean))+
         axis.title =element_text(size = 10),
         axis.text =element_text(size = 8))
 
+#### Duty Factor ####
 b <- ggplot(duty_sum %>% filter(Limb == "hind") ,aes(x = as.factor(Incline), y= emmean))+
   geom_pointrange(aes(ymin = emmean-SE, ymax = emmean+SE, 
                       color = Species, fill = Species, shape = Species),
@@ -682,6 +801,7 @@ b <- ggplot(duty_sum %>% filter(Limb == "hind") ,aes(x = as.factor(Incline), y= 
         axis.title =element_text(size = 10),
         axis.text =element_text(size = 8))
 
+#### Stride Length ####
 c <- ggplot(slength_sum %>% filter(Limb == "hind") ,aes(x = as.factor(Incline), y= emmean))+
   geom_pointrange(aes(ymin = emmean-SE, ymax = emmean+SE, 
                       color = Species, fill = Species, shape = Species),
@@ -696,6 +816,7 @@ c <- ggplot(slength_sum %>% filter(Limb == "hind") ,aes(x = as.factor(Incline), 
         axis.title =element_text(size = 10),
         axis.text =element_text(size = 8))
 
+#### Stride Frequency ####
 d <- ggplot(sfreq_sum %>% filter(Limb == "hind") ,aes(x = as.factor(Incline), y= emmean))+
   geom_pointrange(aes(ymin = emmean-SE, ymax = emmean+SE, 
                       color = Species, fill = Species, shape = Species),
@@ -710,31 +831,8 @@ d <- ggplot(sfreq_sum %>% filter(Limb == "hind") ,aes(x = as.factor(Incline), y=
         axis.title =element_text(size = 10),
         axis.text =element_text(size = 8))
 
-sub <- data.frame()
-for (i in unique(KineData$ID)) {
-  tmp <- KineData[which(KineData$ID == i),]
-  max.climb <- max(tmp[which(tmp$Incline == 80 | tmp$Incline == 90),"Speed"])
-  max.walk <- max(tmp[which(tmp$Incline == 0),"Speed"])
-  tmp[which(tmp$Speed == max.climb),]
-  tmp$Perf <- max.climb/max.walk
-  sub <- rbind(sub,tmp[which(tmp$Speed == max.climb),])
-}
-sub$Species <- factor(sub$Species, levels = c("Aneides aeneus", "Aneides lugubris", "Aneides hardii", "Plethodon glutinosus"))
-
-
-g <- ggplot(sub,aes(x = Species, y=(FootArea/SVL^2), fill = Species))+ 
-  geom_boxplot(show.legend = FALSE)+
-  xlab("Species") + ylab("Pes Area (SVL2)") +
-  scale_x_discrete(labels = c('A. aen','A. lug','A. har', 'P. glu'))+
-  scale_fill_manual(values = col.sp) + 
-  theme_classic()+
-  theme(#axis.text.x=element_blank(),
-    axis.ticks.x=element_blank(),
-    plot.margin = unit(c(0, 0, 0, 0), "cm"),
-    axis.title =element_text(size = 10),
-    axis.text =element_text(size = 8))
-
-h <- ggplot(sub,aes(x = Species, y= Leg_Length/SVL, fill = Species))+ 
+#### Limb Length ####
+g <- ggplot(ind.data,aes(x = Species, y= Leg_Length/SVL, fill = Species))+ 
   geom_boxplot(show.legend = FALSE)+
   xlab("Species") + ylab("Hindlimb Length (SVL)") +
   scale_x_discrete(labels = c('A. aen','A. lug','A. har', 'P. glu'))+
@@ -746,14 +844,27 @@ h <- ggplot(sub,aes(x = Species, y= Leg_Length/SVL, fill = Species))+
     axis.title =element_text(size = 10),
     axis.text =element_text(size = 8))
 
-h + g  + a + b + c +d + plot_layout(ncol = 2, guides = "collect")+ plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom') 
-ggsave("Figure 4.pdf", width = 6.77, height = 6.22, units = "in")
+#### Foot Area ####
+h <- ggplot(ind.data,aes(x = Species, y=Foot_Area/SVL^2, fill = Species))+ 
+  geom_boxplot(show.legend = FALSE)+
+  xlab("Species") + ylab("Hindfoot Area (SVL2)") +
+  scale_x_discrete(labels = c('A. aen','A. lug','A. har', 'P. glu'))+
+  scale_fill_manual(values = col.sp) + 
+  theme_classic()+
+  theme(#axis.text.x=element_blank(),
+    axis.ticks.x=element_blank(),
+    plot.margin = unit(c(0, 0, 0, 0), "cm"),
+    axis.title =element_text(size = 10),
+    axis.text =element_text(size = 8))
 
 
-# Main DFA Boxplots -------------------------------------------------------
+g + h + a + b + c +d + plot_layout(ncol = 2, guides = "collect")+ plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom') 
+#ggsave("Figure 4.pdf", width = 6.5, height = 6.22, units = "in")
+
+
+# Posture Boxplots -------------------------------------------------------
 
 # for Figure 6 plot the main kinematic variables
-
 #### abd max ####
 a <- ggplot(abad_sum %>% filter(Limb == "fore"),aes(x = Incline, y= max_mean))+
   geom_pointrange(aes(ymin = max_mean-max_se, ymax = max_mean+max_se,                       
@@ -792,7 +903,7 @@ c <- ggplot(abad_sum %>% filter(Limb == "fore"),aes(x = Incline, y= exc_mean))+
   geom_pointrange(aes(ymin = exc_mean-exc_se, ymax = exc_mean+exc_se,                       
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
-  xlab("Incline (°)") + ylab("") + labs(title ="Forelimb Abd/Add Excursion (°)") +
+  xlab("Incline (°)") + ylab("") + labs(title ="Forelimb Abd/Add Exc. (°)") +
   ylim(30,57)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
@@ -808,7 +919,7 @@ d <- ggplot(abad_sum %>% filter(Limb == "hind"),aes(x = Incline, y= exc_mean))+
   geom_pointrange(aes(ymin = exc_mean-exc_se, ymax = exc_mean+exc_se,                       
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
-  xlab("Incline (°)") + ylab("") + labs(title ="Hindlimb Abd/Add Excursion (°)") +
+  xlab("Incline (°)") + ylab("") + labs(title ="Hindlimb Abd/Add Exc. (°)") +
   ylim(30,57)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
@@ -820,8 +931,83 @@ d <- ggplot(abad_sum %>% filter(Limb == "hind"),aes(x = Incline, y= exc_mean))+
         axis.title.y = element_blank(),
         plot.title = element_text(size = 10))
 
+#### max wrist/ankle ####
+e <- ggplot(wrist_sum %>% filter(Limb == "fore"),aes(x = Incline, y= max_mean))+
+  geom_pointrange(aes(ymin = max_mean-max_se, ymax = max_mean+max_se, 
+                      color = Species, shape = Species, fill = Species), 
+                  position = position_dodge(0.6), size = 0.4) +
+  xlab("Incline (°)") + ylab("") + labs(title = "Max Wrist Extension (°)") +
+  ylim(158,177)+
+  scale_colour_manual(values = c(col.sp)) + 
+  scale_fill_manual(values = fill.sp) + 
+  scale_shape_manual(values = shape.sp)+
+  theme_classic()+
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm"),
+        axis.title =element_text(size = 10),
+        axis.text =element_text(size = 8),
+        axis.title.y = element_blank(),
+        plot.title = element_text(size = 10))
+
+f <- ggplot(wrist_sum %>% filter(Limb == "hind"),aes(x = Incline, y= max_mean))+
+  geom_pointrange(aes(ymin = max_mean-max_se, ymax = max_mean+max_se, 
+                  color = Species, shape = Species, fill = Species), 
+                  position = position_dodge(0.6), size = 0.4) +
+  xlab("Incline (°)") + ylab("") + labs(title ="Max Ankle Extension (°)") +
+  ylim(158,177)+
+  scale_colour_manual(values = c(col.sp)) + 
+  scale_fill_manual(values = fill.sp) + 
+  scale_shape_manual(values = shape.sp)+
+  theme_classic()+
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm"),
+        axis.title =element_text(size = 10),
+        axis.text =element_text(size = 8),
+        axis.title.y = element_blank(),
+        plot.title = element_text(size = 10))
+
+#### hip height ####
+g <- ggplot(hip_sum %>% filter(Limb == "fore"),aes(x = as.factor(Incline), y= max_mean))+
+  geom_pointrange(aes(ymin = max_mean-max_se, ymax = max_mean+max_se, 
+                      color = Species, fill = Species, shape = Species),
+                  position = position_dodge(0.6), size = 0.4) +
+  xlab("Incline (°)") + ylab("") + labs(title = "Max Shoulder Height (SVL)")+
+  scale_colour_manual(values = c(col.sp)) + 
+  #ylim(0.048,0.14)+
+  scale_fill_manual(values = fill.sp) + 
+  scale_shape_manual(values = shape.sp)+
+  scale_y_continuous(limits = c(0.048,0.14), breaks=c(0.06,0.08,0.1,0.12,0.14))+
+  theme_classic()+
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm"),
+        axis.title =element_text(size = 10),
+        axis.text =element_text(size = 8),
+        plot.title = element_text(size = 10))
+
+h <- ggplot(hip_sum %>% filter(Limb == "hind"),aes(x = as.factor(Incline), y= max_mean))+
+  geom_pointrange(aes(ymin = max_mean-max_se, ymax = max_mean+max_se, 
+                      color = Species, fill = Species, shape = Species),
+                  position = position_dodge(0.6), size = 0.4) +
+  xlab("Incline (°)") + ylab("") + labs(title = "Max Hip Height (SVL)") +
+  scale_colour_manual(values = c(col.sp)) + 
+  #ylim(0.048,0.14)+
+  scale_fill_manual(values = fill.sp) + 
+  scale_shape_manual(values = shape.sp)+
+  scale_y_continuous(limits = c(0.048,0.14), breaks=c(0.06,0.08,0.1,0.12,0.14))+
+  theme_classic()+
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm"),
+        axis.title =element_text(size = 10),
+        axis.text =element_text(size = 8),
+        plot.title = element_text(size = 10))
+
+
+g + h + a + b + c + d +e + f + plot_layout(ncol = 4, guides = "collect")+ plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom') 
+
+
+# Propulsion Boxplots -------------------------------------------------------
+
+# for Figure 6 plot the kinematic variables associated with propulsion
+
+
 #### ret max ####
-e <- ggplot(proret_sum %>% filter(Limb == "fore"),aes(x = Incline, y= min_mean))+
+i <- ggplot(proret_sum %>% filter(Limb == "fore"),aes(x = Incline, y= min_mean))+
   geom_pointrange(aes(ymin = min_mean-min_se, ymax = min_mean+min_se, 
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
@@ -837,12 +1023,12 @@ e <- ggplot(proret_sum %>% filter(Limb == "fore"),aes(x = Incline, y= min_mean))
         axis.title.y = element_blank(),
         plot.title = element_text(size = 10))
 
-f <- ggplot(proret_sum %>% filter(Limb == "hind"),aes(x = Incline, y= min_mean))+
+j <- ggplot(proret_sum %>% filter(Limb == "hind"),aes(x = Incline, y= min_mean))+
   geom_pointrange(aes(ymin = min_mean-min_se, ymax = min_mean+min_se, 
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
   xlab("Incline (°)") + ylab("") + labs(title ="Max Hindlimb Retraction (°)") +
-  ylim(-65,-35)+
+  ylim(-66,-32)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
@@ -854,7 +1040,7 @@ f <- ggplot(proret_sum %>% filter(Limb == "hind"),aes(x = Incline, y= min_mean))
         plot.title = element_text(size = 10))
 
 #### proret exc ####
-g <- ggplot(proret_sum %>% filter(Limb == "fore"),aes(x = Incline, y= exc_mean))+
+k <- ggplot(proret_sum %>% filter(Limb == "fore"),aes(x = Incline, y= exc_mean))+
   geom_pointrange(aes(ymin = exc_mean-exc_se, ymax = exc_mean+exc_se, 
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
@@ -870,7 +1056,7 @@ g <- ggplot(proret_sum %>% filter(Limb == "fore"),aes(x = Incline, y= exc_mean))
         axis.title.y = element_blank(),
         plot.title = element_text(size = 10))
 
-h <- ggplot(proret_sum %>% filter(Limb == "hind"),aes(x = Incline, y= exc_mean))+
+l <- ggplot(proret_sum %>% filter(Limb == "hind"),aes(x = Incline, y= exc_mean))+
   geom_pointrange(aes(ymin = exc_mean-exc_se, ymax = exc_mean+exc_se, 
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
@@ -886,13 +1072,13 @@ h <- ggplot(proret_sum %>% filter(Limb == "hind"),aes(x = Incline, y= exc_mean))
         axis.title.y = element_blank(),
         plot.title = element_text(size = 10))
 
-#### max wrist/ankle ####
-i <- ggplot(wrist_sum %>% filter(Limb == "fore"),aes(x = Incline, y= max_mean))+
-  geom_pointrange(aes(ymin = max_mean-max_se, ymax = max_mean+max_se, 
+#### lar exc ####
+m <- ggplot(lar_sum %>% filter(Limb == "fore"),aes(x = Incline, y= exc_mean))+
+  geom_pointrange(aes(ymin = exc_mean-exc_se, ymax = exc_mean+exc_se, 
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
-  xlab("Incline (°)") + ylab("") + labs(title = "Max Wrist Extension (°)") +
-  ylim(159,177)+
+  xlab("Incline (°)") + ylab("") + labs(title ="Forelimb LAR Excursion (°)")+
+  ylim(67,121)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
@@ -903,12 +1089,12 @@ i <- ggplot(wrist_sum %>% filter(Limb == "fore"),aes(x = Incline, y= max_mean))+
         axis.title.y = element_blank(),
         plot.title = element_text(size = 10))
 
-j <- ggplot(wrist_sum %>% filter(Limb == "hind"),aes(x = Incline, y= max_mean))+
-  geom_pointrange(aes(ymin = max_mean-max_se, ymax = max_mean+max_se, 
-                  color = Species, shape = Species, fill = Species), 
+n <- ggplot(lar_sum %>% filter(Limb == "hind"),aes(x = Incline, y= exc_mean))+
+  geom_pointrange(aes(ymin = exc_mean-exc_se, ymax = exc_mean+exc_se, 
+                      color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
-  xlab("Incline (°)") + ylab("") + labs(title ="Max Ankle Extension (°)") +
-  ylim(159,177)+
+  xlab("Incline (°)") + ylab("") + labs(title ="Hindlimb LAR Excursion (°)") +
+  ylim(67,121)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
@@ -918,14 +1104,16 @@ j <- ggplot(wrist_sum %>% filter(Limb == "hind"),aes(x = Incline, y= max_mean))+
         axis.text =element_text(size = 8),
         axis.title.y = element_blank(),
         plot.title = element_text(size = 10))
+
+
 
 #### girdle exc ####
-k <- ggplot(yaw_sum %>% filter(Limb == "fore"),aes(x = Incline, y= exc_mean))+
+o <- ggplot(yaw_sum %>% filter(Limb == "fore"),aes(x = Incline, y= exc_mean))+
   geom_pointrange(aes(ymin = exc_mean-exc_se, ymax = exc_mean+exc_se, 
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
   xlab("Incline (°)") + ylab("") + labs(title ="Pectoral Girdle Excursion (°)") +
-  ylim(18,49)+
+  ylim(16,49)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
@@ -936,13 +1124,13 @@ k <- ggplot(yaw_sum %>% filter(Limb == "fore"),aes(x = Incline, y= exc_mean))+
         axis.title.y = element_blank(),
         plot.title = element_text(size = 10))
 
-l <- ggplot(yaw_sum %>% filter(Limb == "hind"),aes(x = Incline, y= exc_mean))+
+p <- ggplot(yaw_sum %>% filter(Limb == "hind"),aes(x = Incline, y= exc_mean))+
   geom_pointrange(aes(ymin = exc_mean-exc_se, ymax = exc_mean+exc_se, 
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
   
   xlab("Incline (°)") + ylab("") + labs(title ="Pelvic Girdle Excursion (°)") +
-  ylim(18,49)+
+  ylim(16,49)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
@@ -954,22 +1142,24 @@ l <- ggplot(yaw_sum %>% filter(Limb == "hind"),aes(x = Incline, y= exc_mean))+
         plot.title = element_text(size = 10))
 
 
-a + b + c + d +e +f +g +h + i + j + k + l + plot_layout(ncol = 4, guides = "collect")+ plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom') 
-# ggsave("Figure 6.pdf", width = 9.52, height = 7.99, units = "in")
+i + j + k + l +m +n +o + p + plot_layout(ncol = 4, guides = "collect")+ plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom') 
 
-#c + d + g+  h  + e +  f + a  +b +i + j +plot_layout(ncol = 5, guides = "collect")+ plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom') 
+a + b + c + d + i + j + k + l +m +n +e + f +o + p + g + h + plot_layout(ncol = 4, guides = "collect")+ plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom') 
+#ggsave("Figure 6.pdf", width = 10, height = 9.5, units = "in")
+
 
 # Foot Angle and Spread ---------------------------------------------------
 
 # For Figure 7 plot foot orientation and limb spread 
 
+#### Foot Angle ####
 a <- ggplot(foot_sum %>% filter(Limb == "fore"),aes(x = as.factor(Incline), y= mean))+
   geom_pointrange(aes(ymin = mean-se, ymax = mean+se, 
                       color = Species, fill = Species, shape = Species),
                   position = position_dodge(0.6), size = 0.4) +
-  xlab("Incline (°)") + ylab("Manus Orientation (°)") +
+  xlab("Incline (°)") + ylab("Forefoot Angle (°)") +
   scale_colour_manual(values = c(col.sp)) + 
-  ylim(-14,24)+
+  ylim(-15,27)+
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
   theme_classic()+
@@ -982,9 +1172,9 @@ b <- ggplot(foot_sum %>% filter(Limb == "hind"),aes(x = as.factor(Incline), y= m
   geom_pointrange(aes(ymin = mean-se, ymax = mean+se, 
                       color = Species, fill = Species, shape = Species),
                   position = position_dodge(0.6), size = 0.4) +
-  xlab("Incline (°)") + ylab("Pes Orientation (°)") +
+  xlab("Incline (°)") + ylab("Hindfoot Angle (°)") +
   scale_colour_manual(values = c(col.sp)) + 
-  ylim(-14,24)+
+  ylim(-15,27)+
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
   theme_classic()+
@@ -993,13 +1183,45 @@ b <- ggplot(foot_sum %>% filter(Limb == "hind"),aes(x = as.factor(Incline), y= m
         axis.text =element_text(size = 8),
         plot.title = element_text(size = 10))
 
-c <- ggplot(spread_sum %>% filter(Limb == "fore"),aes(x = as.factor(Incline), y= mean))+
+#### Digital Length ####
+c <- ggplot(dspread_sum %>% filter(Limb == "fore"),aes(x = as.factor(Incline), y= mean))+
+  geom_pointrange(aes(ymin = mean-se, ymax = mean+se, 
+                      color = Species, fill = Species, shape = Species),
+                  position = position_dodge(0.6), size = 0.4) +
+  xlab("Incline (°)") + ylab("Forefoot Digital Spread (°)") +
+  scale_colour_manual(values = c(col.sp)) + 
+  ylim(92,122)+
+  scale_fill_manual(values = fill.sp) + 
+  scale_shape_manual(values = shape.sp)+
+  theme_classic()+
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm"),
+        axis.title =element_text(size = 10),
+        axis.text =element_text(size = 8),
+        plot.title = element_text(size = 10))
+
+d <- ggplot(dspread_sum %>% filter(Limb == "hind"),aes(x = as.factor(Incline), y= mean))+
+  geom_pointrange(aes(ymin = mean-se, ymax = mean+se, 
+                      color = Species, fill = Species, shape = Species),
+                  position = position_dodge(0.6), size = 0.4) +
+  xlab("Incline (°)") + ylab("Hindfoot Digital Spread (°)") +
+  scale_colour_manual(values = c(col.sp)) + 
+  ylim(92,122)+
+  scale_fill_manual(values = fill.sp) + 
+  scale_shape_manual(values = shape.sp)+
+  theme_classic()+
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm"),
+        axis.title =element_text(size = 10),
+        axis.text =element_text(size = 8),
+        plot.title = element_text(size = 10))
+
+#### Limb Spread ####
+e <- ggplot(lspread_sum %>% filter(Limb == "fore"),aes(x = as.factor(Incline), y= mean))+
   geom_pointrange(aes(ymin = mean-se, ymax = mean+se, 
                       color = Species, fill = Species, shape = Species),
                   position = position_dodge(0.6), size = 0.4) +
   xlab("Incline (°)") + ylab("Forelimb Spread (SVL)") +
   scale_colour_manual(values = c(col.sp)) + 
-  ylim(0.057,0.165)+
+  ylim(0.057,0.145)+
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
   theme_classic()+
@@ -1008,13 +1230,13 @@ c <- ggplot(spread_sum %>% filter(Limb == "fore"),aes(x = as.factor(Incline), y=
         axis.text =element_text(size = 8),
         plot.title = element_text(size = 10))
 
-d <- ggplot(spread_sum %>% filter(Limb == "hind"),aes(x = as.factor(Incline), y= mean))+
+f <- ggplot(lspread_sum %>% filter(Limb == "hind"),aes(x = as.factor(Incline), y= mean))+
   geom_pointrange(aes(ymin = mean-se, ymax = mean+se, 
                       color = Species, fill = Species, shape = Species),
                   position = position_dodge(0.6), size = 0.4) +
   xlab("Incline (°)") + ylab("Hindlimb Spread (SVL)") +
   scale_colour_manual(values = c(col.sp)) + 
-  ylim(0.057,0.165)+
+  ylim(0.057,0.145)+
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
   theme_classic()+
@@ -1023,7 +1245,7 @@ d <- ggplot(spread_sum %>% filter(Limb == "hind"),aes(x = as.factor(Incline), y=
         axis.text =element_text(size = 8),
         plot.title = element_text(size = 10))
 
-a + b + c +d +plot_layout(ncol = 2, guides = "collect")+ plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom') 
-ggsave("Figure 7.pdf", width = 6.77, height = 5, units = "in")
-#ggsave("Figure 7v2.pdf", width = 9.52, height = 3, units = "in")
+
+a + b + c +d+e+f+plot_layout(ncol = 2, guides = "collect")+ plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom') 
+#ggsave("Figure 7.pdf", width = 6.5, height = 6.22, units = "in")
 

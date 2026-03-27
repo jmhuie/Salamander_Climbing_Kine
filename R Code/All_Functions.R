@@ -1,5 +1,3 @@
-# actual functions used
-
 # Main Function -----------------------------------------------------
 
 anglecalc <- function(trial,planeP1 = c(0,0,0), 
@@ -26,6 +24,9 @@ anglecalc <- function(trial,planeP1 = c(0,0,0),
   proret <- proretAngle(prox = trial[, 7:9], dist = trial[, 10:12], 
                         post = trial[, 4:6], ant = trial[, 1:3])
   
+  #lar - Long-Axis Rotation
+  lar <- larAngle(trial[,7:9],trial[,10:12],trial[,13:15], planeP1 = planeP1,  planeP2 = planeP2, planeP3 = planeP3)
+  
   #elbow - Elbow/Knee joint angle
   elbow <- jointAngle(trial[,  13:15], trial[, 10:12], trial[, 7:9])
   
@@ -37,16 +38,19 @@ anglecalc <- function(trial,planeP1 = c(0,0,0),
   yaw <- yawAngle(trial[, 1:3], trial[, 4:6], 
                   planeP1 = planeP1,  planeP2 = planeP2, planeP3 = planeP3)
   
-  #Toe - toe orientation
+  #foot - Foot orientation
   foot <- footAngle(trial[, 19:21], trial[, 13:15], trial[, 1:3], trial[, 4:6], 
                    planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
   
-  #Spread - lateral spread of the limb based on the metacarpal/tarsal point
-  spread <- limb_spread(trial[, 16:18],trial[, 1:3], trial[, 4:6], trial[,7:9],
+  #spread - lateral spread of the limb based on the metacarpal/tarsal point
+  spread <- limb_spread(trial[, 13:15],trial[, 1:3], trial[, 4:6], trial[,7:9],
                         planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
   
+  #Hip - height of the hip/shoulder relative to the horizontal plane
+  hip <- hip_height(trial[,7:9], planeP1 = planeP1,  planeP2 = planeP2, planeP3 = planeP3)
   
-  return(data.frame(abad, proret, elbow, wrist, yaw, foot, spread))
+  
+  return(data.frame(abad, proret, lar, elbow, wrist, yaw, foot, spread, hip))
 }
 
 
@@ -150,6 +154,52 @@ proretAngle <- function(prox, dist, post, ant) {
   
   return(FemTVAng)
 }
+
+# Long Axis ---------------------------------------------------------------
+larAngle <- function(hip, knee, ankle, planeP1 = c(0,0,0), planeP2 = c(.1,0,0), planeP3 = c(0,.1,0)) {
+  
+  # upperlimb vector
+  FemurVector <- knee - hip 
+  # lowerlimb vector
+  TibiaVec <- ankle - knee
+  
+  #Generate horizontal plane and calculate vector normal to it
+  ## Setting up horizontal Plane
+  planeVec1 <- planeP2 - planeP1
+  planeVec2 <- planeP3 - planeP1
+  PlaneNorm <- vec_cross(planeVec1,planeVec2)#vector normal to plane
+  PlaneNorm <- abs(PlaneNorm)
+  
+  # empty data matrix for output
+  LAR <- matrix(NA, nrow(hip), 1)
+  for (i in 1:nrow(hip)) {
+    # Arm plane normal
+    LegNorm <- vec_cross(TibiaVec[i,], FemurVector[i,])
+    # Remove elevation
+    dot1 <- wdot(LegNorm, FemurVector[i,])
+    dot2 <- wdot(FemurVector[i,], FemurVector[i,])
+    LegProj <- LegNorm - c(dot1/dot2)*FemurVector[i,]
+    # Project vertical same way
+    dot3 <- wdot(PlaneNorm, FemurVector[i,])
+    VertProj <- PlaneNorm - c(dot3/dot2)*FemurVector[i,]
+    # Normalize 
+    LegProj <- LegProj / c(vlength(LegProj))
+    VertProj <- VertProj / c(vlength(VertProj))
+    
+    # Unsigned angle 
+    cosang <- wdot(VertProj, LegProj) /
+      (vlength(VertProj)*vlength(LegProj))
+    cosang <- max(-1, min(1, cosang))
+    ang <- acos(cosang)
+    
+    # minus 90 so that vertical is 0
+    LAR[i] <- ang * (180/pi) - 90
+  }
+  
+  return(LAR)
+}
+
+
 
 # Joint Angles ------------------------------------------------------------
 
@@ -314,6 +364,41 @@ limb_spread <- function(point, P1, P2, P4, planeP1 = c(0,0,0),
   return(spread)
 }
 
+# Hip Height --------------------------------------------------------------
+
+hip_height <- function(point, planeP1 = c(0,0,0), 
+                       planeP2 = c(.1,0,0), 
+                       planeP3 = c(0,.1,0)) {
+  # calculate the vertical height of a point relative to the horizontal plane
+  
+  ## Setting up horizontal Plane
+  planeVec1 <- planeP2 - planeP1
+  planeVec2 <- planeP3 - planeP1
+  PlaneNorm <- vec_cross(planeVec1,planeVec2)#vector normal to plane
+  
+  # Coefficients of the plane equation (A, B, C)
+  A <- PlaneNorm[1]
+  B <- PlaneNorm[2]
+  C <- PlaneNorm[3]
+  
+  # Find D using point P1
+  D <- -(A * planeP1[1] + B * planeP1[2] + C * planeP1[3])
+  
+  # Calculate the distance from the point to the plane
+  distance <- c()
+  for (i in 1:nrow(point)){
+    numerator <- abs(A * point[i,1] + B * point[i,2] + C * point[i,3] + D)
+    denominator <- sqrt(A^2 + B^2 + C^2)
+    distance <-c(distance,c(numerator / denominator))
+  }
+  names(distance) <- NULL
+  
+  # Output the distance
+  return(distance)
+}
+
+
+
 # Speed -------------------------------------------------------------------
 
 speedKine <- function(data,fps) {
@@ -347,40 +432,6 @@ limb_length <- function(P1, P2, P3, P4 = NULL, foot = FALSE) {
   limblength <- mean(limblength)
   
   return(limblength)
-}
-
-# Summarize Function  ----------------------------------------------------
-# 
-SummKine <- function(list, species, limb, trial) {
-  # summarizes already interpolated 3D points and joint angles for plotting
-  # requires a list of calculated angular kinematics
-  # 
-  summary <- list()
-  for (y in colnames(list[[1]])) {
-    #tmp_list <- list[grep(species, names(list))]
-    tmp_list <- list
-    tmp_Combined <- data.frame(c(1:nrow(tmp_list[[1]])))
-    for(i in 1:length(tmp_list)){
-      tmp_Combined[[i]] <-  tmp_list[[i]][y]
-    }
-    names(tmp_Combined) <- names(tmp_list)
-    
-    se <- function (x, na.rm = TRUE) {
-      sqrt(var(x, na.rm = na.rm)/length(x[complete.cases(x)]))
-    }
-    
-    #calculate mean, se, and error bars for plotting
-    tmpSE <- data.frame(Mean = rowMeans(tmp_Combined))
-    tmpSE$SE <- apply(tmp_Combined, 1, se)
-    tmpSE$Max <- tmpSE$Mean + tmpSE$SE
-    tmpSE$Min <- tmpSE$Mean - tmpSE$SE
-    tmpSE$Species <- rep(species, nrow(tmp_Combined))
-    tmpSE$Limb <- limb
-    tmpSE$Trial <- trial
-    summary <- append(summary,list(tmpSE))
-  }
-  names(summary) <- colnames(list[[1]])
-  return(summary)
 }
 
 # General Plotting --------------------------------------------------------
