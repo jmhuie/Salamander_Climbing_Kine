@@ -27,14 +27,12 @@ This repository contains the data and scripts for "Limb kinematics and morpholog
 	- /ClimbKine_Mainscript_Pub.R
 		- The main R script file used to conduct the analyses performed for this study and plot data figures.
 	- /ClimbKineMeta.csv
-		- A .csv file containing the metadata for each trial including the species, ID, mass (g), snout-vent length (SVL; cm), total body length (BL; cm), trial number, date filmed,
-		calibration filename, camera frame rate, video decimation prior to analysis, trial incline, and the frame numbers indicating the start and end of stance and swing phase for the hindlimb
-		and ipsilateral forelimb strides.	
+		- A .csv file containing the metadata for each trial including the species, ID, mass (g), snout-vent length (SVL; cm), total body length (BL; cm), hand and foot area (cm), trial number, date filmed,
+		calibration filename, camera frame rate, video decimation prior to analysis, trial incline, the frame numbers indicating the start and end of stance and swing phase for the hindlimb
+		and ipsilateral forelimb strides, and measurements of digital spread.	
 	- /ClimbKineData.csv
-		- A .csv file containing the calculated limb lengths and raw spatiotemporal gait parameters calculated in R. Variables include speed (cm/s), stride lengths (cm), limb lengths (cm), duty factor,
-		stride duration (s), and stride frequencies (stride/s). Saved from <code>ClimbKine_Mainscript_Pub.R</code>.
-	- /ClimbKineFootSize.csv
-		- A .csv file containing the manus and pes size (cm^2) of each specimen.
+		- A .csv file containing similar content as ClimbKineMeta.csv as well as the calculated limb lengths and raw spatiotemporal gait parameters calculated in R. Variables include speed (cm/s), stride lengths (cm), limb lengths (cm), duty factor,
+		stride duration (s), and stride frequencies (stride/s). Made and saved in <code>ClimbKine_Mainscript_Pub.R</code>.
 	- /Code.Rproj
 		- A R project file. Should be used to launch R studio.
 	- /fore3Dpts_all.rds
