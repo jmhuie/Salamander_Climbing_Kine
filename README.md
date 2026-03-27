@@ -27,7 +27,7 @@ This repository contains the data and scripts for "Limb kinematics and morpholog
 	- /ClimbKine_Mainscript_Pub.R
 		- The main R script file used to conduct the analyses performed for this study and plot data figures.
 	- /ClimbKineMeta.csv
-		- A .csv file containing the metadata for each trial including the species, ID, mass (g), snout-vent length (SVL; cm), total body length (BL; cm), hand and foot area (cm), trial number, date filmed,
+		- A .csv file containing the metadata for each trial including the species, ID, mass (g), snout-vent length (SVL; cm), total body length (BL; cm), hand and foot area (cm^2), trial number, date filmed,
 		calibration filename, camera frame rate, video decimation prior to analysis, trial incline, the frame numbers indicating the start and end of stance and swing phase for the hindlimb
 		and ipsilateral forelimb strides, and measurements of digital spread.	
 	- /ClimbKineData.csv
