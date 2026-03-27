@@ -19,7 +19,7 @@ This repository contains the data and scripts for "Limb kinematics and morpholog
 - .../Python Code/
 	- /xma2dlc.py
 		- A Python script file containing functions for creating a DLC network with training data from XMALab, analyzing new videos, extracting camera calibrations,
-		converting 2D coordinates to 3D, and more. Some functions were modified from the [XROMM Tools](https://github.com/jdlaurence/XROMM_DLCTools) as part of [Laurence-Chasen et al. 2020](https://doi.org/10.1242/jeb.226720).
+		converting 2D coordinates to 3D, and more. Some functions were modified from the [XROMM Tools](https://github.com/jdlaurence/XROMM_DLCTools) written by [Laurence-Chasen et al. 2020](https://doi.org/10.1242/jeb.226720).
 		
 - .../R Code/
 	- /All_Functions.R
@@ -31,7 +31,7 @@ This repository contains the data and scripts for "Limb kinematics and morpholog
 		calibration filename, camera frame rate, video decimation prior to analysis, trial incline, the frame numbers indicating the start and end of stance and swing phase for the hindlimb
 		and ipsilateral forelimb strides, and measurements of digital spread.	
 	- /ClimbKineData.csv
-		- A .csv file containing similar content as ClimbKineMeta.csv as well as the calculated limb lengths and raw spatiotemporal gait parameters calculated in R. Variables include speed (cm/s), stride lengths (cm), limb lengths (cm), duty factor,
+		- A .csv file containing similar content as <code>ClimbKineMeta.csv</code> as well as the calculated limb lengths and raw spatiotemporal gait parameters calculated in R. Variables include speed (cm/s), stride lengths (cm), limb lengths (cm), duty factor,
 		stride duration (s), and stride frequencies (stride/s). Made and saved in <code>ClimbKine_Mainscript_Pub.R</code>.
 	- /Code.Rproj
 		- A R project file. Should be used to launch R studio.
