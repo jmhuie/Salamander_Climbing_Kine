@@ -448,7 +448,7 @@ ggplot() +
   scale_shape_manual(values = c(21,22,25,24))+
   scale_colour_manual(values = col.sp)+
   scale_fill_manual(values = col.sp)+
-  labs(x= "LD1: 64.9%", y = "LD2: 9.6%")+
+  labs(x= "LD1: 64.7%", y = "LD2: 9.6%")+
   guides(colour=guide_legend(title="Species"),
          shape=guide_legend(title="Incline"))+
   theme_classic() +
@@ -706,6 +706,21 @@ foot_sum <- data.frame(foot_sum[1:32])
 colnames(foot_sum)[5:6] <- c("mean","se")
 foot_sum$Species <- factor(foot_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
 
+## digit spread  --------------------------------------------------------------------
+dspread_comb <- rbind.fill(KineData[,c("Species","ID","Trial","Incline","SVL")],
+                           KineData[,c("Species","ID","Trial","Incline","SVL")])
+dspread_comb$Limb <- c(rep("fore",nrow(KineData)),rep("hind",nrow(KineData)))
+dspread_comb$Spread <- c(KineData$Hand_Spread,KineData$Foot_Spread)
+
+lm <- nlme::lme(Spread~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = dspread_comb)
+anova(lm)
+performance::r2_nakagawa(lm)
+dspread_sum <- emmeans(lm, ~ Species | Incline | Limb | SVL)
+dspread_sum <- data.frame(dspread_sum[1:32])
+colnames(dspread_sum)[5:6] <- c("mean","se")
+dspread_sum$Species <- factor(dspread_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
+
+
 ## limb spread --------------------------------------------------------------------
 lspread_comb <- rbind.fill(KineData[,c("Species","ID","Trial","Incline","SVL")],
                           KineData[,c("Species","ID","Trial","Incline","SVL")])
@@ -719,21 +734,6 @@ lspread_sum <- emmeans(lm, ~ Species | Incline | Limb | SVL)
 lspread_sum <- data.frame(lspread_sum[1:32])
 colnames(lspread_sum)[5:6] <- c("mean","se")
 lspread_sum$Species <- factor(lspread_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
-
-
-## digit spread  --------------------------------------------------------------------
-dspread_comb <- rbind.fill(KineData[,c("Species","ID","Trial","Incline","SVL")],
-                          KineData[,c("Species","ID","Trial","Incline","SVL")])
-dspread_comb$Limb <- c(rep("fore",nrow(KineData)),rep("hind",nrow(KineData)))
-dspread_comb$Spread <- c(KineData$Hand_Spread,KineData$Foot_Spread)
-
-lm <- nlme::lme(Spread~as.factor(Incline)*Species*Limb+log(SVL), random =  ~1|ID, data = dspread_comb)
-anova(lm)
-performance::r2_nakagawa(lm)
-dspread_sum <- emmeans(lm, ~ Species | Incline | Limb | SVL)
-dspread_sum <- data.frame(dspread_sum[1:32])
-colnames(dspread_sum)[5:6] <- c("mean","se")
-dspread_sum$Species <- factor(dspread_sum$Species, levels = c("Aneides aeneus", "Aneides lugubris","Aneides hardii", "Plethodon glutinosus"))
 
 
 ## height --------------------------------------------------------------------
@@ -1012,7 +1012,7 @@ i <- ggplot(proret_sum %>% filter(Limb == "fore"),aes(x = Incline, y= min_mean))
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
   xlab("Incline (°)") + ylab("") + labs(title ="Max Forelimb Retraction (°)")+
-  ylim(-65,-35)+
+  ylim(-68,-35)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
@@ -1028,7 +1028,7 @@ j <- ggplot(proret_sum %>% filter(Limb == "hind"),aes(x = Incline, y= min_mean))
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
   xlab("Incline (°)") + ylab("") + labs(title ="Max Hindlimb Retraction (°)") +
-  ylim(-66,-32)+
+  ylim(-68,-32)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
@@ -1045,7 +1045,7 @@ k <- ggplot(proret_sum %>% filter(Limb == "fore"),aes(x = Incline, y= exc_mean))
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
   xlab("Incline (°)") + ylab("") + labs(title ="Forelimb Pro/Ret Excursion (°)")+
-  ylim(70,120)+
+  ylim(78,125)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
@@ -1061,7 +1061,7 @@ l <- ggplot(proret_sum %>% filter(Limb == "hind"),aes(x = Incline, y= exc_mean))
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
   xlab("Incline (°)") + ylab("") + labs(title ="Hindlimb Pro/Ret Excursion (°)") +
-  ylim(70,120)+
+  ylim(78,125)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
@@ -1113,7 +1113,7 @@ o <- ggplot(yaw_sum %>% filter(Limb == "fore"),aes(x = Incline, y= exc_mean))+
                       color = Species, shape = Species, fill = Species), 
                   position = position_dodge(0.6), size = 0.4) +
   xlab("Incline (°)") + ylab("") + labs(title ="Pectoral Girdle Excursion (°)") +
-  ylim(16,49)+
+  ylim(16,51)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
@@ -1130,7 +1130,7 @@ p <- ggplot(yaw_sum %>% filter(Limb == "hind"),aes(x = Incline, y= exc_mean))+
                   position = position_dodge(0.6), size = 0.4) +
   
   xlab("Incline (°)") + ylab("") + labs(title ="Pelvic Girdle Excursion (°)") +
-  ylim(16,49)+
+  ylim(16,51)+
   scale_colour_manual(values = c(col.sp)) + 
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
@@ -1159,7 +1159,7 @@ a <- ggplot(foot_sum %>% filter(Limb == "fore"),aes(x = as.factor(Incline), y= m
                   position = position_dodge(0.6), size = 0.4) +
   xlab("Incline (°)") + ylab("Forefoot Angle (°)") +
   scale_colour_manual(values = c(col.sp)) + 
-  ylim(-15,27)+
+  ylim(-18,30)+
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
   theme_classic()+
@@ -1174,7 +1174,7 @@ b <- ggplot(foot_sum %>% filter(Limb == "hind"),aes(x = as.factor(Incline), y= m
                   position = position_dodge(0.6), size = 0.4) +
   xlab("Incline (°)") + ylab("Hindfoot Angle (°)") +
   scale_colour_manual(values = c(col.sp)) + 
-  ylim(-15,27)+
+  ylim(-18,30)+
   scale_fill_manual(values = fill.sp) + 
   scale_shape_manual(values = shape.sp)+
   theme_classic()+

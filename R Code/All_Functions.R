@@ -22,37 +22,39 @@ anglecalc <- function(trial,planeP1 = c(0,0,0),
   
   #proret - Protraction/Retraction
   proret <- proretAngle(prox = trial[, 7:9], dist = trial[, 10:12], 
-                        post = trial[, 4:6], ant = trial[, 1:3])
+                        post = trial[, 4:6], ant = trial[, 1:3],
+                        planeP1 = planeP1,  planeP2 = planeP2, planeP3 = planeP3)
   
   #lar - Long-Axis Rotation
-  lar <- larAngle(trial[,7:9],trial[,10:12],trial[,13:15], planeP1 = planeP1,  planeP2 = planeP2, planeP3 = planeP3)
-  
+  lar <- larAngle(hip = trial[,7:9], knee = trial[,10:12], ankle = trial[,13:15], 
+                  planeP1 = planeP1,  planeP2 = planeP2, planeP3 = planeP3)
+
   #elbow - Elbow/Knee joint angle
-  elbow <- jointAngle(trial[,  13:15], trial[, 10:12], trial[, 7:9])
+  # point order is distal to proximal
+  elbow <- jointAngle(P1 = trial[,13:15], P2 = trial[,10:12], P3 = trial[,7:9])
   
   #wrist - Wrist/Ankle joint angle
-  wrist <- jointAngle(trial[, 16:18], trial[, 13:15], trial[, 10:12])
+  # point order is distal to proximal
+  wrist <- jointAngle(P1 = trial[, 16:18], P2 = trial[, 13:15], P3 = trial[, 10:12])
   
   #yaw - Yaw angle
   # anterior girdle point first then posterior girdle point
-  yaw <- yawAngle(trial[, 1:3], trial[, 4:6], 
+  yaw <- yawAngle(P1 = trial[, 1:3], P2 = trial[, 4:6], 
                   planeP1 = planeP1,  planeP2 = planeP2, planeP3 = planeP3)
   
   #foot - Foot orientation
-  foot <- footAngle(trial[, 19:21], trial[, 13:15], trial[, 1:3], trial[, 4:6], 
+  foot <- footAngle(dist = trial[, 19:21], prox = trial[, 13:15], P1 = trial[, 1:3], P2 = trial[, 4:6], 
                    planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
   
   #spread - lateral spread of the limb based on the metacarpal/tarsal point
-  spread <- limb_spread(trial[, 13:15],trial[, 1:3], trial[, 4:6], trial[,7:9],
+  spread <- limb_spread(dist = trial[, 13:15], prox = trial[,7:9], 
                         planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
   
   #Hip - height of the hip/shoulder relative to the horizontal plane
-  hip <- hip_height(trial[,7:9], planeP1 = planeP1,  planeP2 = planeP2, planeP3 = planeP3)
-  
+  hip <- hip_height(hip = trial[,7:9], planeP1 = planeP1,  planeP2 = planeP2, planeP3 = planeP3)
   
   return(data.frame(abad, proret, lar, elbow, wrist, yaw, foot, spread, hip))
 }
-
 
 # Extra Math Fx -----------------------------------------------------------
 
@@ -77,6 +79,7 @@ vlength <- function(x) {
   return(v)
 }
 
+# calculate the distance between 3D points
 distbetween3Dpts <-  function(point1, point2) {
   # Calculate the differences in coordinates
   dx <- point2[,1] - point1[,1]
@@ -87,6 +90,31 @@ distbetween3Dpts <-  function(point1, point2) {
   distance <- sqrt(dx^2 + dy^2 + dz^2)
   
   return(distance)
+}
+
+# Project the points onto the user define plane
+proj_plane <- function(points, planeP1 = c(0,0,0), 
+                            planeP2 = c(0.1,0,0), 
+                            planeP3 = c(0,0.1,0)) {
+  
+  # ensure matrix
+  points <- as.matrix(points)
+  
+  # vectors spanning the plane
+  v1 <- planeP2 - planeP1
+  v2 <- planeP3 - planeP1
+  
+  # normal vector (cross product)
+  n <- vec_cross(v1,v2)
+  
+  # normalize normal vector
+  n <- n / sqrt(sum(n^2))
+  
+  # project all points (vectorized)
+  # subtract distance along normal
+  proj <- points - ((points - matrix(planeP1, nrow(points), 3, byrow=TRUE)) %*% n) %*% t(n)
+  
+  return(proj)
 }
 
 # Abduction/Adduction -----------------------------------------------------
@@ -104,9 +132,9 @@ abadAngle <- function(prox, dist, planeP1 = c(0,0,0),
   ## Setting up horizontal Plane
   planeVec1 <- planeP2 - planeP1
   planeVec2 <- planeP3 - planeP1
-  PlaneNorm <- vec_cross(planeVec1,planeVec2)#vector normal to plane
-  PlaneNorm <- abs(PlaneNorm)
-  
+  PlaneNorm <- vec_cross(planeVec1,planeVec2) #vector normal to plane
+  if (PlaneNorm[3] < 0) PlaneNorm <- -1*PlaneNorm # make sure the vector points dorsally
+
   FemFRAngInit <- matrix()
   for (i in 1:nrow(FemurVector)) {
     FemurVectorTrans1AA <- FemurVector[i,]
@@ -129,9 +157,18 @@ abadAngle <- function(prox, dist, planeP1 = c(0,0,0),
 
 # Protraction/Retraction --------------------------------------------------
 
-proretAngle <- function(prox, dist, post, ant) {
+proretAngle <- function(prox, dist, post, ant, planeP1 = c(0,0,0), 
+                        planeP2 = c(.1,0,0), 
+                        planeP3 = c(0,.1,0)) {
   # requires the proximal joint (shoulder/ hip), distal joint (elbow/knee)
   # and two points on the midline above the girdle
+  
+  # project points onto the horizontal plane
+  prox <- proj_plane(prox, planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
+  dist <- proj_plane(dist, planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
+  post <- proj_plane(post, planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
+  ant <- proj_plane(ant, planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
+  
   
   FemurVector <- dist - prox
   MidlineVector <- ant - post
@@ -168,27 +205,30 @@ larAngle <- function(hip, knee, ankle, planeP1 = c(0,0,0), planeP2 = c(.1,0,0), 
   planeVec1 <- planeP2 - planeP1
   planeVec2 <- planeP3 - planeP1
   PlaneNorm <- vec_cross(planeVec1,planeVec2)#vector normal to plane
-  PlaneNorm <- abs(PlaneNorm)
+  if (PlaneNorm[3] < 0) PlaneNorm <- -1*PlaneNorm # make sure the vector points dorsally
   
   # empty data matrix for output
   LAR <- matrix(NA, nrow(hip), 1)
   for (i in 1:nrow(hip)) {
-    # Arm plane normal
+   
+     # Arm plane normal
     LegNorm <- vec_cross(TibiaVec[i,], FemurVector[i,])
+    
     # Remove elevation
     dot1 <- wdot(LegNorm, FemurVector[i,])
     dot2 <- wdot(FemurVector[i,], FemurVector[i,])
     LegProj <- LegNorm - c(dot1/dot2)*FemurVector[i,]
+    
     # Project vertical same way
     dot3 <- wdot(PlaneNorm, FemurVector[i,])
     VertProj <- PlaneNorm - c(dot3/dot2)*FemurVector[i,]
+    
     # Normalize 
     LegProj <- LegProj / c(vlength(LegProj))
     VertProj <- VertProj / c(vlength(VertProj))
-    
+
     # Unsigned angle 
-    cosang <- wdot(VertProj, LegProj) /
-      (vlength(VertProj)*vlength(LegProj))
+    cosang <- wdot(VertProj, LegProj)
     cosang <- max(-1, min(1, cosang))
     ang <- acos(cosang)
     
@@ -198,7 +238,6 @@ larAngle <- function(hip, knee, ankle, planeP1 = c(0,0,0), planeP2 = c(.1,0,0), 
   
   return(LAR)
 }
-
 
 
 # Joint Angles ------------------------------------------------------------
@@ -237,6 +276,9 @@ yawAngle<- function(P1, P2, planeP1, planeP2, planeP3) {
   # requires two points on the midline above the girdle
   # calculates yaw relative to the heading of the posterior gridle point
   
+  P1 <- proj_plane(P1, planeP1, planeP2, planeP3)
+  P2 <- proj_plane(P2, planeP1, planeP2, planeP3)
+  
   # calculate the point inbetween the two girdle points
   P3 <- P1
   P3[,1] <- rowMeans(cbind(P1[,1],P2[,1]))
@@ -245,7 +287,7 @@ yawAngle<- function(P1, P2, planeP1, planeP2, planeP3) {
   # calculate the direction of the girdle point to define the sagittal plane
   StartPoint <- P3[1,]
   EndPoint <- P3[nrow(P3),]
-  MidlineVector <- EndPoint - StartPoint
+  HeadingVector <- EndPoint - StartPoint
   
   GirdleVector <- P1 - P2
   
@@ -257,7 +299,7 @@ yawAngle<- function(P1, P2, planeP1, planeP2, planeP3) {
   PlaneNorm <- abs(PlaneNorm)
   
   # calculate a vector perpendicular to the normal vector of horizontal plane and the direction of the animal
-  newVector <- vec_cross(PlaneNorm,MidlineVector)
+  newVector <- vec_cross(PlaneNorm,HeadingVector)
   
   GirdleTVAngInit <- matrix()
   for (i in 1:nrow(GirdleVector)) {
@@ -282,6 +324,11 @@ footAngle <- function(dist, prox, P1, P2, planeP1, planeP2, planeP3) {
   # requires toe and metacarpa/tarsal point and two points on the midline above the girdle
   # calculates angle of the toe relative to the heading of the posterior gridle point
   
+  dist <- proj_plane(dist, planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
+  prox <- proj_plane(prox, planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
+  P1 <- proj_plane(P1, planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
+  P2 <- proj_plane(P2, planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
+  
   # calculate the point inbetween the two girdle points
   P3 <- P1
   P3[,1] <- rowMeans(cbind(P1[,1],P2[,1]))
@@ -290,7 +337,7 @@ footAngle <- function(dist, prox, P1, P2, planeP1, planeP2, planeP3) {
   # calculate the direction of the girdle point to define the sagittal plane
   StartPoint <- P3[1,]
   EndPoint <- P3[nrow(P3),]
-  MidlineVector <- EndPoint - StartPoint
+  HeadingVector <- EndPoint - StartPoint
   
   ToeVector <- dist - prox
   
@@ -302,7 +349,7 @@ footAngle <- function(dist, prox, P1, P2, planeP1, planeP2, planeP3) {
   PlaneNorm <- abs(PlaneNorm)
   
   # calculate a vector perpendicular to the normal vector of horizontal plane and the direction of the animal
-  newVector <- vec_cross(PlaneNorm,MidlineVector)
+  newVector <- vec_cross(PlaneNorm,HeadingVector)
   
   ToeTVAngInit <- matrix()
   for (i in 1:nrow(ToeVector)) {
@@ -323,20 +370,19 @@ footAngle <- function(dist, prox, P1, P2, planeP1, planeP2, planeP3) {
 
 # Limb Spread -------------------------------------------------------------
 
-limb_spread <- function(point, P1, P2, P4, planeP1 = c(0,0,0), 
+limb_spread <- function(dist, prox, planeP1 = c(0,0,0), 
                         planeP2 = c(.1,0,0), 
                         planeP3 = c(0,.1,0)) {
   # calculate the horizontal distance betweem the foot and a sagittal plane
   
-  # calculate the point inbetween the two girdle points
-  P3 <- P1
-  P3[,1] <- rowMeans(cbind(P1[,1],P2[,1]))
-  P3[,2] <- rowMeans(cbind(P1[,2],P2[,2]))
-  P3[,3] <- rowMeans(cbind(P1[,3],P2[,3]))
-  # calculate the direction of the girdle point to define the sagittal plane
-  StartPoint <- P4[1,]
-  EndPoint <- P4[nrow(P4),]
-  MidlineVector <- EndPoint - StartPoint
+  # project points onto the horizontal plane
+  dist <- proj_plane(dist, planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
+  prox <- proj_plane(prox, planeP1 = planeP1, planeP2 = planeP2, planeP3 = planeP3)
+
+  # calculate the direction of the hip joint to define the sagittal plane
+  StartPoint <- prox[1,]
+  EndPoint <- prox[nrow(prox),]
+  HeadingVector <- EndPoint - StartPoint
   
   # calculate horizontal plane norm
   planeVec1 <- planeP2 - planeP1
@@ -344,7 +390,7 @@ limb_spread <- function(point, P1, P2, P4, planeP1 = c(0,0,0),
   HorizPlaneNorm <- vec_cross(planeVec1,planeVec2)#vector normal to plane
   
   #calculate the normal of the sagittal plane
-  SagPlaneNorm <- vec_cross(HorizPlaneNorm, MidlineVector)
+  SagPlaneNorm <- vec_cross(HorizPlaneNorm, HeadingVector)
   
   #calculate the sagittal plane coefficients
   A <- SagPlaneNorm[1]
@@ -353,8 +399,8 @@ limb_spread <- function(point, P1, P2, P4, planeP1 = c(0,0,0),
   D <- -(A * StartPoint[1] + B * StartPoint[2] + C * StartPoint[3])
   
   spread <- c()
-  for (i in 1:nrow(point)){
-    numerator <- abs(A * point[i,1] + B * point[i,2] + C * point[i,3] + D)
+  for (i in 1:nrow(dist)){
+    numerator <- abs(A * dist[i,1] + B * dist[i,2] + C * dist[i,3] + D)
     denominator <- sqrt(A^2 + B^2 + C^2)
     spread <-c(spread,c(numerator / denominator))
   }
@@ -366,7 +412,7 @@ limb_spread <- function(point, P1, P2, P4, planeP1 = c(0,0,0),
 
 # Hip Height --------------------------------------------------------------
 
-hip_height <- function(point, planeP1 = c(0,0,0), 
+hip_height <- function(hip, planeP1 = c(0,0,0), 
                        planeP2 = c(.1,0,0), 
                        planeP3 = c(0,.1,0)) {
   # calculate the vertical height of a point relative to the horizontal plane
@@ -386,8 +432,8 @@ hip_height <- function(point, planeP1 = c(0,0,0),
   
   # Calculate the distance from the point to the plane
   distance <- c()
-  for (i in 1:nrow(point)){
-    numerator <- abs(A * point[i,1] + B * point[i,2] + C * point[i,3] + D)
+  for (i in 1:nrow(hip)){
+    numerator <- abs(A * hip[i,1] + B * hip[i,2] + C * hip[i,3] + D)
     denominator <- sqrt(A^2 + B^2 + C^2)
     distance <-c(distance,c(numerator / denominator))
   }
@@ -433,6 +479,41 @@ limb_length <- function(P1, P2, P3, P4 = NULL, foot = FALSE) {
   
   return(limblength)
 }
+
+# Summarize Function  ----------------------------------------------------
+# 
+SummKine <- function(list, species, limb, trial) {
+  # summarizes already interpolated 3D points and joint angles for plotting
+  # requires a list of calculated angular kinematics
+  # 
+  summary <- list()
+  for (y in colnames(list[[1]])) {
+    #tmp_list <- list[grep(species, names(list))]
+    tmp_list <- list
+    tmp_Combined <- data.frame(c(1:nrow(tmp_list[[1]])))
+    for(i in 1:length(tmp_list)){
+      tmp_Combined[[i]] <-  tmp_list[[i]][y]
+    }
+    names(tmp_Combined) <- names(tmp_list)
+    
+    se <- function (x, na.rm = TRUE) {
+      sqrt(var(x, na.rm = na.rm)/length(x[complete.cases(x)]))
+    }
+    
+    #calculate mean, se, and error bars for plotting
+    tmpSE <- data.frame(Mean = rowMeans(tmp_Combined))
+    tmpSE$SE <- apply(tmp_Combined, 1, se)
+    tmpSE$Max <- tmpSE$Mean + tmpSE$SE
+    tmpSE$Min <- tmpSE$Mean - tmpSE$SE
+    tmpSE$Species <- rep(species, nrow(tmp_Combined))
+    tmpSE$Limb <- limb
+    tmpSE$Trial <- trial
+    summary <- append(summary,list(tmpSE))
+  }
+  names(summary) <- colnames(list[[1]])
+  return(summary)
+}
+
 
 # General Plotting --------------------------------------------------------
 
