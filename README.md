@@ -1,7 +1,7 @@
 # Salamander Climbing Kinematics
 
 ### About
-This repository contains the data and scripts for Huie, JM and Kawano, SM. (In press; 2026). Limb kinematics and morphology improve salamander climbing performance. <i> The Journal of Experimental Biology </i>.
+This repository contains the data and scripts for Huie, JM and Kawano, SM. (Accepted; 2026). Limb kinematics and morphology improve salamander climbing performance. <i> The Journal of Experimental Biology</i>.
 
 ### Content
 - .../CameraCalibs/
